@@ -34,12 +34,24 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_library(sharkfuser INTERFACE)
 target_include_directories(sharkfuser INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-# Enable testing
-include(CTest)
-enable_testing()
+# Version pins for dependencies.
+set(SHARKFUSER_IREE_GIT_TAG "iree-3.6.0rc20250612")
 
-# Download Catch2 for testing
-if(NOT catch2_FOUND)
+# build options
+option(SHARKFUSER_BUILD_TESTS "Builds C++ tests" ON)
+
+
+################################################################################
+# Tests
+################################################################################
+
+if(SHARKFUSER_BUILD_TESTS)
+  # Enable testing
+  include(CTest)
+  enable_testing()
+
+  # Download Catch2 for testing
+  if(NOT catch2_FOUND)
     include(FetchContent)
 
     FetchContent_Declare(
@@ -48,11 +60,13 @@ if(NOT catch2_FOUND)
       GIT_TAG         v3.5.2
     )
     FetchContent_MakeAvailable(catch2)
-endif()
+  endif()
 
-# Add test executable
-add_executable(sharkfuser_tests 
+  # Add test executable
+  add_executable(sharkfuser_tests
     tests/test_sharkfuser.cpp
-)
-target_link_libraries(sharkfuser_tests PRIVATE sharkfuser Catch2::Catch2WithMain)
-add_test(NAME sharkfuser_tests COMMAND sharkfuser_tests)
+  )
+  target_link_libraries(sharkfuser_tests PRIVATE sharkfuser Catch2::Catch2WithMain)
+  add_test(NAME sharkfuser_tests COMMAND sharkfuser_tests)
+
+endif()
