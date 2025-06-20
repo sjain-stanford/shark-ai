@@ -34,12 +34,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_library(sharkfuser INTERFACE)
 target_include_directories(sharkfuser INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/sharkfuser)
 
-# Version pins for dependencies.
+# Version pins for dependencies
 set(SHARKFUSER_IREE_GIT_TAG "iree-3.6.0rc20250612")
 set(SHARKFUSER_CATCH2_GIT_TAG "v3.8.1")
 
+# Includes
+include(FetchContent)
+include(CTest)
+
 # Build options
 option(SHARKFUSER_BUILD_TESTS "Builds C++ tests" ON)
+option(SHARKFUSER_BUILD_SAMPLES "Builds C++ samples" ON)
 option(SHARKFUSER_SYSTEMS_AMDGPU "Builds for AMD GPU systems" ON)
 
 set(SHARKFUSER_IREE_SOURCE_DIR "" CACHE FILEPATH "Path to local IREE source directory")
@@ -50,11 +55,6 @@ if(SHARKFUSER_SYSTEMS_AMDGPU)
   message(STATUS "  - AMD GPU")
 endif()
 message(STATUS "  - Host")
-
-
-# Includes
-include(FetchContent)
-include(CTest)
 
 
 ################################################################################
@@ -75,7 +75,7 @@ if(SHARKFUSER_SYSTEMS_AMDGPU)
 endif()
 
 if(SHARKFUSER_IREE_SOURCE_DIR)
-  message(STATUS "Using existing IREE sources: ${SHARKFUSER_IREE_SOURCE_DIR}")
+  message(STATUS "Using local IREE source directory: ${SHARKFUSER_IREE_SOURCE_DIR}")
   add_subdirectory(${SHARKFUSER_IREE_SOURCE_DIR} sharkfuser_iree SYSTEM EXCLUDE_FROM_ALL)
 else()
   message(STATUS "Fetching IREE sources from tag ${SHARKFUSER_IREE_GIT_TAG}")
@@ -96,28 +96,15 @@ else()
 endif()
 
 
-################################################################################
-# Tests
-################################################################################
+# Build samples
+if(SHARKFUSER_BUILD_SAMPLES)
+  message(STATUS "Building SharkFuser samples")
+  add_subdirectory(samples)
+endif()
 
+# Build tests
 if(SHARKFUSER_BUILD_TESTS)
+  message(STATUS "Building SharkFuser tests")
+  add_subdirectory(tests)
   enable_testing()
-
-  # Download Catch2 for testing
-  if(NOT catch2_FOUND)
-    FetchContent_Declare(
-      catch2
-      GIT_REPOSITORY  https://github.com/catchorg/Catch2.git
-      GIT_TAG         ${SHARKFUSER_CATCH2_GIT_TAG}
-    )
-    FetchContent_MakeAvailable(catch2)
-  endif()
-
-  # Add test executable and link libs
-  add_executable(sharkfuser_tests
-    tests/test_sharkfuser.cpp
-  )
-  target_link_libraries(sharkfuser_tests PRIVATE sharkfuser Catch2::Catch2WithMain)
-  add_test(NAME sharkfuser_tests COMMAND sharkfuser_tests)
-
 endif()
