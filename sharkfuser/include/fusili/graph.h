@@ -43,6 +43,9 @@ private:
     return {error_code_t::OK, ""};
   }
 
+  std::string emit_asm_node_pre() override final;
+  std::string emit_asm_node_post() override final;
+
   error_t check_pre_assigned_uids_are_unique() {
     used_uids.clear();
 
@@ -100,7 +103,15 @@ public:
     return {error_code_t::OK, ""};
   }
 
-  Type getType() override { return Type::COMPOSITE; }
+  std::string emit_asm() {
+    FUSILI_LOG_LABEL_ENDL("INFO: Emitting mlir assembly for graph");
+    std::ostringstream oss;
+    emit_asm_subtree(oss);
+    FUSILI_LOG_ENDL(oss.str());
+    return oss.str();
+  }
+
+  Type getType() override { return Type::GRAPH; }
 
   Graph &set_io_data_type(DataType_t const type) {
     context.set_io_data_type(type);

@@ -41,4 +41,6 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
   Y->set_output(true);
 
   REQUIRE(graph->validate().is_ok());
+
+  graph->emit_asm();
 }

@@ -8,6 +8,7 @@
 #define FUSILI_H
 
 #include "fusili/context.h"
+#include "fusili/emit_asm.h"
 #include "fusili/graph.h"
 #include "fusili/logging.h"
 #include "fusili/types.h"

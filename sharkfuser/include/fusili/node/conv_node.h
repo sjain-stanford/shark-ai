@@ -22,6 +22,9 @@ public:
 
   Type getType() override final { return Type::CONVOLUTION; }
 
+  std::string emit_asm_node_pre() override final;
+  std::string emit_asm_node_post() override final;
+
   error_t pre_validate_node() const override final {
     FUSILI_LOG_LABEL_ENDL("INFO: Validating node Type::Convolution "
                           << attr.get_name() << "...");

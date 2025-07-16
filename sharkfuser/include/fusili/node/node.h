@@ -8,6 +8,7 @@
 #define FUSILI_NODE_NODE_H
 
 #include <memory>
+#include <sstream>
 
 #include "fusili/context.h"
 #include "fusili/logging.h"
@@ -22,8 +23,12 @@ private:
 
   virtual error_t post_validate_node() const { return {error_code_t::OK, ""}; }
 
+  virtual std::string emit_asm_node_pre() = 0;
+  virtual std::string emit_asm_node_post() = 0;
+
 protected:
   enum class Type {
+    GRAPH,
     COMPOSITE,
     CONVOLUTION,
   };
@@ -42,6 +47,14 @@ protected:
     }
     FUSILI_CHECK_ERROR(post_validate_node());
     return {error_code_t::OK, ""};
+  }
+
+  void emit_asm_subtree(std::ostringstream &oss) {
+    oss << emit_asm_node_pre();
+    for (const auto &sub_node : sub_nodes) {
+      sub_node->emit_asm_subtree(oss);
+    }
+    oss << emit_asm_node_post();
   }
 
 public:
