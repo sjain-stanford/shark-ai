@@ -23,7 +23,7 @@ enum class [[nodiscard]] error_code_t {
   TENSOR_NOT_FOUND,
 };
 
-static const std::unordered_map<error_code_t, std::string> error_code_str = {
+static const std::unordered_map<error_code_t, std::string> ERROR_CODE_TO_STR = {
     {error_code_t::OK, "OK"},
     {error_code_t::NOT_IMPLEMENTED, "NOT_IMPLEMENTED"},
     {error_code_t::ATTRIBUTE_NOT_SET, "ATTRIBUTE_NOT_SET"},
@@ -58,8 +58,8 @@ typedef struct [[nodiscard]] error_object {
 
 static inline std::ostream &operator<<(std::ostream &os,
                                        const error_code_t &code) {
-  auto it = error_code_str.find(code);
-  if (it != error_code_str.end())
+  auto it = ERROR_CODE_TO_STR.find(code);
+  if (it != ERROR_CODE_TO_STR.end())
     os << it->second;
   else
     os << "UNKNOWN_ERROR_CODE";

@@ -7,12 +7,42 @@
 #ifndef FUSILI_EMIT_ASM_H
 #define FUSILI_EMIT_ASM_H
 
+#include <array>
+#include <cassert>
 #include <format>
+#include <sstream>
+#include <string>
+#include <string_view>
+#include <vector>
 
+#include "fusili/attributes/tensor_attributes.h"
 #include "fusili/graph.h"
 #include "fusili/node/conv_node.h"
+#include "fusili/types.h"
 
 namespace fusili {
+
+inline std::string get_ranked_tensor_type(const TensorAttr &attr) {
+  assert(!attr.get_is_scalar() &&
+         "TensorAttr must not be a scalar for `get_ranked_tensor_type`");
+  assert(!attr.get_dim().empty() &&
+         "TensorAttr must have non-empty dims for `get_ranked_tensor_type`");
+  assert(attr.get_data_type() != DataType_t::NOT_SET &&
+         "TensorAttr must have a valid data type for `get_ranked_tensor_type`");
+
+  std::ostringstream oss;
+  oss << "!torch.vtensor<[";
+  const std::vector<int64_t> &dims = attr.get_dim();
+  for (size_t i = 0; i < dims.size(); ++i) {
+    if (i > 0)
+      oss << ",";
+    oss << dims[i];
+  }
+  oss << "],";
+  oss << DATA_TYPE_TO_MLIR_TYPE.at(attr.get_data_type());
+  oss << ">";
+  return oss.str();
+}
 
 // We use a combination of raw multi-line strings `R"(...)"` and `std::format`
 // (from c++20) to implement a simple templating system for generating mlir
@@ -28,12 +58,21 @@ namespace fusili {
 //    "is not a constant expression"
 
 inline std::string Graph::emit_asm_node_pre() {
-  constexpr std::string_view str = R"(
+  constexpr std::string_view schema = R"(
 module @module {{
-  func.func @{}(%arg0: !torch.vtensor<[16,128,64,64],f32>, %arg1: !torch.vtensor<[256,128,1,1],f32>) -> !torch.vtensor<[16,256,64,64],f32> attributes {{torch.assume_strict_symbolic_shapes}} {{
+  func.func @main({0}) -> {1} attributes {{torch.assume_strict_symbolic_shapes}} {{
   )";
 
-  std::string output = std::format(str, "main");
+  constexpr std::array<std::string_view, 2> REPLACEMENTS = {
+      // 0
+      "%arg0: !torch.vtensor<[16,128,64,64],f32>, %arg1: "
+      "!torch.vtensor<[256,128,1,1],f32>",
+
+      // 1
+      "!torch.vtensor<[16,256,64,64],f32>",
+  };
+
+  std::string output = std::format(schema, REPLACEMENTS[0], REPLACEMENTS[1]);
   return output;
 }
 
