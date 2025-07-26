@@ -89,7 +89,7 @@ jobs:
         image: sjainstanford/ubuntu-24.04-dev:latest
         options: >
           --rm
-          -v "${{ env.SHARKFUSER_DIR }}":"/src"
+          -v "${{ env.SHARKFUSER_DIR }}":/src
           -v "${HOME}":"${HOME}"
         run: |
           cmake -GNinja -S. -Bbuild ${{matrix.cmake-options}}
@@ -102,7 +102,7 @@ jobs:
         image: sjainstanford/ubuntu-24.04-dev:latest
         options: >
           --rm
-          -v "${{ env.SHARKFUSER_DIR }}":"/src"
+          -v "${{ env.SHARKFUSER_DIR }}":/src
           -v "${HOME}":"${HOME}"
         run: |
           ctest --test-dir build --output-on-failure --extra-verbose --timeout 30
@@ -114,7 +114,7 @@ jobs:
         image: sjainstanford/ubuntu-24.04-dev:latest
         options: >
           --rm
-          -v "${{ env.SHARKFUSER_DIR }}":"/src"
+          -v "${{ env.SHARKFUSER_DIR }}":/src
           -v "${HOME}":"${HOME}"
         run: |
           ctest --test-dir build -T test -T coverage --timeout 30
