@@ -89,7 +89,7 @@ jobs:
         image: sjainstanford/ubuntu-24.04-dev:latest
         options: >
           --rm
-          -v ${{ env.SHARKFUSER_DIR }}:/src
+          -v "${{ env.SHARKFUSER_DIR }}":/src
         run: |
           cmake -GNinja -S. -Bbuild ${{matrix.cmake-options}}
           cmake --build build --target all
@@ -101,7 +101,7 @@ jobs:
         image: sjainstanford/ubuntu-24.04-dev:latest
         options: >
           --rm
-          -v ${{ env.SHARKFUSER_DIR }}:/src
+          -v "${{ env.SHARKFUSER_DIR }}":/src
         run: |
           ctest --test-dir build --output-on-failure --extra-verbose --timeout 30
 
@@ -112,7 +112,7 @@ jobs:
         image: sjainstanford/ubuntu-24.04-dev:latest
         options: >
           --rm
-          -v ${{ env.SHARKFUSER_DIR }}:/src
+          -v "${{ env.SHARKFUSER_DIR }}":/src
         run: |
           ctest --test-dir build -T test -T coverage --timeout 30
           lcov --capture --directory build --output-file build/coverage.info
