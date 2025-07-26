@@ -90,7 +90,6 @@ jobs:
         options: >
           --rm
           -v ${{ env.SHARKFUSER_DIR }}:/src
-          -v ${HOME}:${HOME}
         run: |
           cmake -GNinja -S. -Bbuild ${{matrix.cmake-options}}
           cmake --build build --target all
@@ -103,7 +102,6 @@ jobs:
         options: >
           --rm
           -v ${{ env.SHARKFUSER_DIR }}:/src
-          -v ${HOME}:${HOME}
         run: |
           ctest --test-dir build --output-on-failure --extra-verbose --timeout 30
 
@@ -115,7 +113,6 @@ jobs:
         options: >
           --rm
           -v ${{ env.SHARKFUSER_DIR }}:/src
-          -v ${HOME}:${HOME}
         run: |
           ctest --test-dir build -T test -T coverage --timeout 30
           lcov --capture --directory build --output-file build/coverage.info
