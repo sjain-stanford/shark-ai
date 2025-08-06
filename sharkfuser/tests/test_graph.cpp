@@ -69,8 +69,8 @@ TEST_CASE("Graph validate() returns OK for valid graph", "[graph]") {
       .setIntermediateDataType(DataType::Float);
   auto x = g.tensor(TensorAttr()
                         .setName("X")
-                        .setDim({1, 8, 8, 3})
-                        .setStride({192, 24, 3, 1}));
+                        .setDim({1, 3, 8, 8})
+                        .setStride({128, 64, 8, 1}));
   auto w = g.tensor(
       TensorAttr().setName("W").setDim({4, 3, 3, 3}).setStride({27, 9, 3, 1}));
   ConvFPropAttr attr;
@@ -79,11 +79,13 @@ TEST_CASE("Graph validate() returns OK for valid graph", "[graph]") {
 
   // Fails because y is underspecified (shape/stride inference unimplemented)
   auto status = g.validate();
-  REQUIRE(isError(status));
-  REQUIRE(status.getCode() == ErrorCode::NotImplemented);
-  REQUIRE(status.getMessage() ==
-          "ConvFProp node shape inference not implemented yet; please "
-          "specify output tensor dimensions");
+
+  REQUIRE(y->getDim() == std::vector<int64_t>{1, 4, 6, 6});
+  // REQUIRE(isError(status));
+  // REQUIRE(status.getCode() == ErrorCode::NotImplemented);
+  // REQUIRE(status.getMessage() ==
+  //         "ConvFProp node shape inference not implemented yet; please "
+  //         "specify output tensor dimensions");
 
   // Specify y's shape and strides
   y->setDim({1, 8, 8, 4}).setStride({256, 32, 4, 1});
