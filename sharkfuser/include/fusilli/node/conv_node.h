@@ -102,7 +102,7 @@ public:
       yT->setDim(yDim);
     }
     if (yStride.empty()) {
-      if (xStride)
+      return ok();
     }
 
     return ok();

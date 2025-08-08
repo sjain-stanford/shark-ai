@@ -77,19 +77,15 @@ TEST_CASE("Graph validate() returns OK for valid graph", "[graph]") {
   attr.setPadding({0, 0}).setStride({1, 1}).setDilation({1, 1}).setName("conv");
   auto y = g.convFProp(x, w, attr);
 
-  // Fails because y is underspecified (shape/stride inference unimplemented)
-  auto status = g.validate();
+  // shape and strides of output tensor are not inferred yet
+  REQUIRE(y->getDim().empty());
+  REQUIRE(y->getStride().empty());
+
+  // This runs shape/stride inference
+  REQUIRE(isOk(g.validate()));
 
   REQUIRE(y->getDim() == std::vector<int64_t>{1, 4, 6, 6});
-  // REQUIRE(isError(status));
-  // REQUIRE(status.getCode() == ErrorCode::NotImplemented);
-  // REQUIRE(status.getMessage() ==
-  //         "ConvFProp node shape inference not implemented yet; please "
-  //         "specify output tensor dimensions");
-
-  // Specify y's shape and strides
-  y->setDim({1, 8, 8, 4}).setStride({256, 32, 4, 1});
-  REQUIRE(isOk(g.validate()));
+  REQUIRE(y->getStride() == std::vector<int64_t>{144, 36, 6, 1});
 }
 
 TEST_CASE("Graph asm_emitter requires validation to be run first", "[graph]") {
