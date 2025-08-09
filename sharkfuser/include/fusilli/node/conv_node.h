@@ -64,15 +64,7 @@ public:
 
     convFPropAttr.fillFromContext(context);
 
-    // Logical layout is always "channels-first" (NCHW if 4D).
-    // Physical layout (in memory) is determined by the strides.
-    //
-    // T with logical shape (n,c,h,w) and stride (c*h*w, h*w, w, 1) is NCHW
-    // physical.
-    //
-    // T with logical shape (n,c,h,w) and stride (c*h*w, 1, c*w, c) is
-    // NHWC physical.
-    //
+    // Logical layout is always channels-first (NCHW if 4D)
     auto xT = convFPropAttr.getX(); // NCHW if 4D
     auto wT = convFPropAttr.getW(); // KCRS if 4D
     auto yT = convFPropAttr.getY(); // NKPQ if 4D
@@ -102,6 +94,7 @@ public:
       yT->setDim(yDim);
     }
     if (yStride.empty()) {
+      // When unspecified, preserve the stride order of xT (input tensor)
       return ok();
     }
 
