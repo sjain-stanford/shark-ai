@@ -33,11 +33,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # https://discourse.cmake.org/t/cmake-3-28-cmake-cxx-compiler-clang-scan-deps-notfound-not-found/9244/3
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
-# Add include directory for header-only library
-add_library(libfusilli INTERFACE)
-target_include_directories(libfusilli INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_include_directories(libfusilli INTERFACE ${CMAKE_CURRENT_BINARY_DIR}/include)
-
 # Includes
 include(CTest)
 
@@ -72,6 +67,14 @@ configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/templates/external_tools.h.in
   ${CMAKE_CURRENT_BINARY_DIR}/include/fusilli/support/external_tools.h.inc
   @ONLY
+)
+
+# Add include directory for header-only library
+add_library(libfusilli INTERFACE)
+target_include_directories(libfusilli INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(libfusilli INTERFACE ${CMAKE_CURRENT_BINARY_DIR}/include)
+target_link_libraries(libfusilli INTERFACE
+  iree_runtime_unified
 )
 
 # Build options

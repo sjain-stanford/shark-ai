@@ -123,14 +123,14 @@ public:
                                         const std::shared_ptr<TensorAttr> &w,
                                         ConvFPropAttr &attributes);
 
-  // Return compiled artifact. The first invocation will always generate
+  // Return path to compiled artifact. The first invocation will always generate
   // compiled artifact, subsequent invocations may return cached versions
   // assuming cache invalidation checks pass. Set `remove = true` to remove
   // cache files when this `Graph` instance goes out of scope.
   //
   // `reCompiled` will be set to true if a value is passed and the cache was
   // (re)generated; this parameter is useful for testing.
-  ErrorOr<std::string>
+  ErrorOr<std::filesystem::path>
   readOrGenerateCompiledArtifact(const std::string &generatedAsm,
                                  bool remove = true,
                                  std::optional<bool> *reCompiled = nullptr) {
@@ -147,7 +147,7 @@ public:
       *reCompiled = true;
     }
     cache_ = FUSILLI_TRY(generateCompiledArtifacts(generatedAsm, remove));
-    return cache_->output.read();
+    return cache_->output.path;
   }
 
 private:
