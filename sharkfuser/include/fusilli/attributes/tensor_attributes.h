@@ -96,15 +96,16 @@ namespace fusilli {
 // a channels-last tensor (NHWC) would look like as emitted by Fusilli and after
 // IREE's transpose elimination passes:
 //
-//    x [NCHW + stride] -> conv [NHWC] -> y [NCHW + stride]  // Fusilli graph
+//  Fusilli graph:
+//    x [NCHW + stride] -> conv [NHWC] -> y [NCHW + stride]
 //
-//    x [NHWC] -> T [NCHW] -> conv [NCHW] -> T' [NHWC] -> y [NHWC]  // torch
-//    dialect
+//  Torch:
+//    x [NHWC] -> T [NCHW] -> conv [NCHW] -> T' [NHWC] -> y [NHWC]
 //
-//    x [NHWC] -> conv [NHWC] -> T [NCHW] -> T' [NHWC] -> y [NHWC]  // linalg
-//    dialect
+//  Linalg:
+//    x [NHWC] -> conv [NHWC] -> T [NCHW] -> T' [NHWC] -> y [NHWC]
 //
-//    x [NHWC] -> conv [NHWC] -> y [NHWC]  // linalg dialect
+//    x [NHWC] -> conv [NHWC] -> y [NHWC]
 //
 
 // Generates stride order for a channels-first tensor. For a 4D tensor, this
