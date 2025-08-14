@@ -86,3 +86,5 @@ add_sharkfuser_lit_test(
     filecheck
     iree-opt
 )
+
+add_subdirectory(hip_tests)
