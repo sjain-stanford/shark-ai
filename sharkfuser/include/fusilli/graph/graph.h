@@ -27,12 +27,16 @@
 #include <cassert>
 #include <cstdlib>
 #include <filesystem>
+#include <iree/runtime/call.h>
+#include <iree/runtime/instance.h>
+#include <iree/runtime/session.h>
 #include <memory>
 #include <optional>
 #include <set>
 #include <string>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 #define IREE_COMPILE_INPUT_FILENAME "iree-compile-input.mlir"
 #define IREE_COMPILE_OUTPUT_FILENAME "iree-compile-output.vmfb"
@@ -148,6 +152,85 @@ public:
     }
     cache_ = FUSILLI_TRY(generateCompiledArtifacts(generatedAsm, remove));
     return cache_->output.path;
+  }
+
+  // Singleton function to get the IREE runtime instance
+  static ErrorOr<iree_runtime_instance_t *> getInstance() {
+    static iree_runtime_instance_t *instance = nullptr;
+
+    if (instance == nullptr) {
+      iree_runtime_instance_options_t instance_options;
+      iree_runtime_instance_options_initialize(&instance_options);
+      iree_runtime_instance_options_use_all_available_drivers(
+          &instance_options);
+
+      FUSILLI_CHECK_ERROR(iree_runtime_instance_create(
+          &instance_options, iree_allocator_system(), &instance));
+    }
+
+    return ok(instance);
+  }
+
+  ErrorOr<iree_hal_device_t *> getDevice() {
+    // TODO: this creates a single device, for example on an 8 GPU machine the
+    // device will be GPU 0. We will want to make this configurable, and capable
+    // of running on multiple GPUs.
+    iree_hal_device_t *device = nullptr;
+    FUSILLI_CHECK_ERROR(iree_runtime_instance_try_create_default_device(
+        FUSILLI_TRY(Graph::getInstance()),
+        iree_make_cstring_view(halDriver.at(context.getBackend())), &device));
+
+    return ok(device);
+  }
+
+  ErrorOr<iree_runtime_call_t>
+  execute(std::vector<iree_hal_buffer_view_t *> args) {
+    // Compile to vmfb
+    std::string vmfbPath =
+        FUSILLI_TRY(readOrGenerateCompiledArtifact(FUSILLI_TRY(emitAsm())));
+
+    // Create instance.
+    iree_runtime_instance_t *instance = FUSILLI_TRY(Graph::getInstance());
+
+    // Get device.
+    iree_hal_device_t *device = FUSILLI_TRY(getDevice());
+
+    // Create session.
+    iree_runtime_session_options_t session_options;
+    iree_runtime_session_options_initialize(&session_options);
+    iree_runtime_session_t *session = nullptr;
+    FUSILLI_CHECK_ERROR(iree_runtime_session_create_with_device(
+        instance, &session_options, device,
+        iree_runtime_instance_host_allocator(instance), &session));
+
+    // Append compiler output to the session.
+    FUSILLI_CHECK_ERROR(iree_runtime_session_append_bytecode_module_from_file(
+        session, vmfbPath.c_str()));
+
+    // Initialize the call to the function.
+    iree_runtime_call_t call;
+    FUSILLI_CHECK_ERROR(iree_runtime_call_initialize_by_name(
+        session, iree_make_cstring_view("module.main"), &call));
+
+    // Push arguments to the call.
+    for (iree_hal_buffer_view_t *arg : args) {
+      // add the image to the call inputs list
+      FUSILLI_CHECK_ERROR(
+          iree_runtime_call_inputs_push_back_buffer_view(&call, arg));
+
+      // Since the call retains the buffer view we can release it here.
+      iree_hal_buffer_view_release(arg);
+    }
+
+    // Invoke the call.
+    FUSILLI_CHECK_ERROR(iree_runtime_call_invoke(&call, /*flags=*/0));
+
+    // Cleanup.
+    iree_runtime_session_release(session);
+
+    // TODO: It's now the callers responsibility to release `call`, we should
+    // probably write some sort of a RAII wrapper around `iree_runtime_call_t`.
+    return ok(call);
   }
 
 private:

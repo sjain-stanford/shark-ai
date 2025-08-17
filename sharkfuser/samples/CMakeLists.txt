@@ -9,19 +9,9 @@
 find_package(Catch2 3 REQUIRED)
 
 add_sharkfuser_sample(
-  NAME sharkfuser_cpu_convolution_samples
+  NAME sharkfuser_convolution_samples
   SRCS
-    convolution/conv_fprop_cpu.cpp
-  DEPS
-    libfusilli
-    Catch2::Catch2WithMain
-)
-
-# TODO: maybe combine cpu + gpu into one sample
-add_sharkfuser_sample(
-  NAME sharkfuser_gpu_convolution_samples
-  SRCS
-    convolution/conv_fprop_gpu.cpp
+    convolution/conv_fprop.cpp
   DEPS
     libfusilli
     Catch2::Catch2WithMain

@@ -37,10 +37,15 @@
 
 using namespace fusilli;
 
-TEST_CASE("Convolution fprop GPU", "[conv][graph]") {
+TEST_CASE("Convolution fprop", "[conv][graph]") {
   int64_t n = 16, c = 128, h = 64, w = 64, k = 256, r = 1, s = 1;
 
   auto graph = std::make_shared<Graph>();
+
+  // Parameterize sample by backend
+  SECTION("CPU backend") { graph->setBackend(Backend::CPU); }
+  SECTION("gfx942 backend") { graph->setBackend(Backend::GFX942); }
+
   graph->setName("fprop_sample");
   graph->setIODataType(DataType::Float).setComputeDataType(DataType::Float);
 
@@ -68,73 +73,19 @@ TEST_CASE("Convolution fprop GPU", "[conv][graph]") {
 
   REQUIRE(isOk(graph->validate()));
 
-  ErrorOr<std::string> generatedAsm = graph->emitAsm();
-  REQUIRE(isOk(generatedAsm));
-
-  std::string ouputPath = FUSILLI_REQUIRE_UNWRAP(
-      graph->readOrGenerateCompiledArtifact(*generatedAsm));
-
   // ----------------------------------------------------------------------
-  //  Create instance + session
-  // ----------------------------------------------------------------------
-
-  iree_runtime_instance_options_t instance_options;
-  iree_runtime_instance_options_initialize(&instance_options);
-  iree_runtime_instance_options_use_all_available_drivers(&instance_options);
-  iree_runtime_instance_t *instance = NULL;
-  REQUIRE(isOk(iree_runtime_instance_create(
-      &instance_options, iree_allocator_system(), &instance)));
-
-  // Grab the default device for driver.
-  // TODO: make this configurable, we probably want options per backend passed
-  // to execute.
-  iree_hal_device_t *device = NULL;
-  REQUIRE(isOk(iree_runtime_instance_try_create_default_device(
-      instance,
-      iree_make_cstring_view(halDriver.at(graph->context.getBackend())),
-      &device)));
-
-  // Create session
-  iree_runtime_session_options_t session_options;
-  iree_runtime_session_options_initialize(&session_options);
-  iree_runtime_session_t *session = NULL;
-  REQUIRE(isOk(iree_runtime_session_create_with_device(
-      instance, &session_options, device,
-      iree_runtime_instance_host_allocator(instance), &session)));
-  // session is holding on to device ath this point
-  iree_hal_device_release(device);
-
-  // ----------------------------------------------------------------------
-  //  Load module + create call
-  // ----------------------------------------------------------------------
-
-  // append our file to the session
-  REQUIRE(isOk(iree_runtime_session_append_bytecode_module_from_file(
-      session, ouputPath.c_str())));
-
-  // Initialize the call to the function.
-  iree_runtime_call_t call;
-  REQUIRE(isOk(iree_runtime_call_initialize_by_name(
-      session, iree_make_cstring_view("module.main"), &call)));
-
-  iree_vm_function_t function;
-  REQUIRE(isOk(iree_runtime_session_lookup_function(
-      session, iree_make_cstring_view("module.main"), &function)));
-
-  // ----------------------------------------------------------------------
-  //  Create %filter + %image args and add to the call
+  //  Create %filter + %image args
   // ----------------------------------------------------------------------
 
   // Get allocators
+  iree_hal_device_t *device = FUSILLI_REQUIRE_UNWRAP(graph->getDevice());
   iree_hal_allocator_t *device_allocator =
-      iree_runtime_session_device_allocator(session);
-  iree_allocator_t host_allocator =
-      iree_runtime_session_host_allocator(session);
+      iree_hal_device_allocator(FUSILLI_REQUIRE_UNWRAP(graph->getDevice()));
+  iree_allocator_t host_allocator = iree_allocator_system();
 
+  // %filter: !torch.vtensor<[256,128,1,1],f32>
+  iree_hal_buffer_view_t *filter = nullptr;
   {
-    // %filter: !torch.vtensor<[256,128,1,1],f32>
-    iree_hal_buffer_view_t *filter = nullptr;
-
     // Create hall buffer view with copy of the data.
     const std::array filterShape =
         std::to_array<iree_host_size_t>({256, 128, 1, 1});
@@ -166,19 +117,11 @@ TEST_CASE("Convolution fprop GPU", "[conv][graph]") {
                                   filterData.size() * sizeof(float)),
         // Buffer view + storage are returned and owned by the caller:
         &filter)));
-
-    // add the filter to the call inputs list
-    REQUIRE(
-        isOk(iree_runtime_call_inputs_push_back_buffer_view(&call, filter)));
-
-    // Since the call retains the buffer view we can release it here.
-    iree_hal_buffer_view_release(filter);
   }
 
+  // %image: !torch.vtensor<[16,128,64,64],f32>
+  iree_hal_buffer_view_t *image = nullptr;
   {
-    // %image: !torch.vtensor<[16,128,64,64],f32>
-    iree_hal_buffer_view_t *image = nullptr;
-
     // Create hall buffer view with copy of the data.
     const std::array imageShape =
         std::to_array<iree_host_size_t>({16, 128, 64, 64});
@@ -210,29 +153,20 @@ TEST_CASE("Convolution fprop GPU", "[conv][graph]") {
                                   imageData.size() * sizeof(float)),
         // Buffer view + storage are returned and owned by the caller:
         &image)));
-
-    // add the image to the call inputs list
-    REQUIRE(isOk(iree_runtime_call_inputs_push_back_buffer_view(&call, image)));
-
-    // Since the call retains the buffer view we can release it here.
-    iree_hal_buffer_view_release(image);
   }
 
-  FUSILLI_LOG_LABEL_ENDL("iree_vm_list_size(iree_runtime_call_inputs(&call)): "
-                         << iree_vm_list_size(iree_runtime_call_inputs(&call)));
-
   // ----------------------------------------------------------------------
-  // invoke the call and print the results
+  // graph->execute and check the results
   // ----------------------------------------------------------------------
 
-  REQUIRE(isOk(iree_runtime_call_invoke(&call, /*flags=*/0)));
+  iree_runtime_call_t call = FUSILLI_REQUIRE_UNWRAP(
+      graph->execute(std::vector<iree_hal_buffer_view_t *>{filter, image}));
 
-  // Dump the function outputs.
+  // Pull the results from the call.
   iree_hal_buffer_view_t *ret0 = nullptr;
-  // Try to get the first call result as a buffer view.
   REQUIRE(isOk(iree_runtime_call_outputs_pop_front_buffer_view(&call, &ret0)));
 
-  // Copy results back from device.
+  // Copy results back from device (this also works for CPUs).
   iree_hal_buffer_t *buffer = iree_hal_buffer_view_buffer(ret0);
   iree_device_size_t byte_length = iree_hal_buffer_view_byte_length(ret0);
   std::vector<float> hostData(byte_length / sizeof(float));
@@ -240,20 +174,11 @@ TEST_CASE("Convolution fprop GPU", "[conv][graph]") {
       device, buffer, 0, hostData.data(), byte_length,
       IREE_HAL_TRANSFER_BUFFER_FLAG_DEFAULT, iree_infinite_timeout())));
 
-  // Check the result
+  // Check the results.
   for (auto v : hostData) {
     REQUIRE(v == 128.0f);
   }
 
-  // ----------------------------------------------------------------------
-  //  cleanup
-  // ----------------------------------------------------------------------
-
+  // Under the current API it's hte callers responsibility to clean up the call.
   iree_runtime_call_deinitialize(&call);
-  iree_runtime_session_release(session);
-  iree_runtime_instance_release(instance);
-
-  FUSILLI_LOG_LABEL_ENDL(FUSILLI_COLOR_GREEN
-                         << "Runtime integration working so far!"
-                         << FUSILLI_COLOR_RESET);
 }
