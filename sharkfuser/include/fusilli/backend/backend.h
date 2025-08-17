@@ -26,6 +26,11 @@ enum class Backend {
   GFX942,
 };
 
+static const std::unordered_map<Backend, const char *> halDriver = {
+    {Backend::CPU, "local-task"},
+    {Backend::GFX942, "hip"},
+};
+
 // The flags corresponding to each compile backend.
 static const std::unordered_map<Backend, std::vector<std::string>>
     backendFlags = {

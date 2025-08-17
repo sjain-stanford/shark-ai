@@ -4,6 +4,7 @@
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
+#include "fusilli/backend/backend.h"
 #include <fusilli.h>
 
 #include <array>
@@ -36,7 +37,7 @@
 
 using namespace fusilli;
 
-TEST_CASE("Convolution fprop", "[conv][graph]") {
+TEST_CASE("Convolution fprop GPU", "[conv][graph]") {
   int64_t n = 16, c = 128, h = 64, w = 64, k = 256, r = 1, s = 1;
 
   auto graph = std::make_shared<Graph>();
@@ -84,11 +85,14 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
   REQUIRE(isOk(iree_runtime_instance_create(
       &instance_options, iree_allocator_system(), &instance)));
 
-  // Grab the default device for "local-task" driver. Where "local-task" is
-  // synchronous CPU.
+  // Grab the default device for driver.
+  // TODO: make this configurable, we probably want options per backend passed
+  // to execute.
   iree_hal_device_t *device = NULL;
   REQUIRE(isOk(iree_runtime_instance_try_create_default_device(
-      instance, iree_make_cstring_view("local-task"), &device)));
+      instance,
+      iree_make_cstring_view(halDriver.at(graph->context.getBackend())),
+      &device)));
 
   // Create session
   iree_runtime_session_options_t session_options;
@@ -97,6 +101,7 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
   REQUIRE(isOk(iree_runtime_session_create_with_device(
       instance, &session_options, device,
       iree_runtime_instance_host_allocator(instance), &session)));
+  // session is holding on to device ath this point
   iree_hal_device_release(device);
 
   // ----------------------------------------------------------------------
@@ -221,6 +226,24 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
   // ----------------------------------------------------------------------
 
   REQUIRE(isOk(iree_runtime_call_invoke(&call, /*flags=*/0)));
+
+  // Dump the function outputs.
+  iree_hal_buffer_view_t *ret0 = nullptr;
+  // Try to get the first call result as a buffer view.
+  REQUIRE(isOk(iree_runtime_call_outputs_pop_front_buffer_view(&call, &ret0)));
+
+  // Copy results back from device.
+  iree_hal_buffer_t *buffer = iree_hal_buffer_view_buffer(ret0);
+  iree_device_size_t byte_length = iree_hal_buffer_view_byte_length(ret0);
+  std::vector<float> hostData(byte_length / sizeof(float));
+  REQUIRE(isOk(iree_hal_device_transfer_d2h(
+      device, buffer, 0, hostData.data(), byte_length,
+      IREE_HAL_TRANSFER_BUFFER_FLAG_DEFAULT, iree_infinite_timeout())));
+
+  // Check the result
+  for (auto v : hostData) {
+    REQUIRE(v == 128.0f);
+  }
 
   // ----------------------------------------------------------------------
   //  cleanup
