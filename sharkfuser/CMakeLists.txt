@@ -73,6 +73,7 @@ configure_file(
 add_library(libfusilli INTERFACE)
 target_include_directories(libfusilli INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(libfusilli INTERFACE ${CMAKE_CURRENT_BINARY_DIR}/include)
+# Statically link IREERuntime
 target_link_libraries(libfusilli INTERFACE
   iree_runtime_unified
 )
