@@ -19,6 +19,7 @@ sharkfuser_find_program(iree-opt "Please install iree-opt (e.g., pip install ire
 
 # Enable HIP tests if AMD GPU is detected and HIP is found
 if(EXISTS "/dev/kfd")
+  set(HIP_PLATFORM "amd")
   find_package(HIP QUIET)
   if(HIP_FOUND)
     message(STATUS "AMD GPU detected and HIP found: Enabling HIP tests")
