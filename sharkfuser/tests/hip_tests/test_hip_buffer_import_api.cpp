@@ -11,7 +11,6 @@
 #include "../utils.h"
 
 #include <catch2/catch_test_macros.hpp>
-#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 
@@ -93,7 +92,7 @@ TEST_CASE("Buffer import", "[hip_tests]") {
   params.usage = IREE_HAL_BUFFER_USAGE_DEFAULT;
 
   // Create imported buffer to be populated with externally managed buffer
-  iree_hal_buffer_t *out_buffer = NULL;
+  iree_hal_buffer_t *out_buffer = nullptr;
 
   iree_hal_buffer_release_callback_t release_callback =
       iree_hal_buffer_release_callback_null();

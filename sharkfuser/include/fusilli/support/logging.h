@@ -16,6 +16,7 @@
 #include <iree/base/status.h>
 
 #include <cassert>
+#include <cstddef>
 #include <cstdio>
 #include <fstream>
 #include <iostream>
