@@ -13,7 +13,11 @@
 #ifndef FUSILLI_SUPPORT_LOGGING_H
 #define FUSILLI_SUPPORT_LOGGING_H
 
+#include <iree/base/status.h>
+
 #include <cassert>
+#include <cstddef>
+#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -21,6 +25,48 @@
 #include <variant>
 
 namespace fusilli {
+
+// A RAII based adapter for writing to C++ `std::strings` using C-style
+// `fprint`s.
+//
+// example usage:
+//   // C functions from IREE runtime api.
+//   status_t try_thing();
+//   bool is_ok(status_t status);
+//   void error_message_fprint(FILE *stream, status_t error_status);
+//
+//   void CPPCodeUsingCAPI() {
+//     status_t status = try_thing();
+//     if (!is_ok(status)) {
+//       std::string err;
+//       error_message_fprint(FprintToString(err), status);
+//       FUSILLI_LOG_LABEL_RED("try_thing failure: " << err);
+//     }
+//   }
+struct FprintToString {
+  char *buffer;
+  size_t size;
+  FILE *stream;
+  std::string &output;
+
+  explicit FprintToString(std::string &output)
+      : buffer(nullptr), size(0), stream(open_memstream(&buffer, &size)),
+        output(output) {}
+
+  ~FprintToString() {
+    fclose(stream);
+    output = std::string(buffer);
+    free(buffer);
+  }
+
+  operator FILE *() { return stream; }
+
+  // Delete all other constructors
+  FprintToString(FprintToString &&other) noexcept = delete;
+  FprintToString operator=(const FprintToString &&) noexcept = delete;
+  FprintToString(const FprintToString &) = delete;
+  FprintToString &operator=(const FprintToString &) = delete;
+};
 
 enum class [[nodiscard]] ErrorCode {
   OK,
@@ -30,6 +76,7 @@ enum class [[nodiscard]] ErrorCode {
   InvalidAttribute,
   TensorNotFound,
   CompileFailure,
+  RuntimeFailure,
   FileSystemFailure,
 };
 
@@ -41,6 +88,7 @@ static const std::unordered_map<ErrorCode, std::string> ErrorCodeToStr = {
     {ErrorCode::InvalidAttribute, "INVALID_ATTRIBUTE"},
     {ErrorCode::TensorNotFound, "TENSOR_NOT_FOUND"},
     {ErrorCode::CompileFailure, "COMPILE_FAILURE"},
+    {ErrorCode::RuntimeFailure, "RUNTIME_FAILURE"},
     {ErrorCode::FileSystemFailure, "FILE_SYSTEM_FAILURE"},
 };
 
@@ -51,6 +99,17 @@ struct [[nodiscard]] ErrorObject {
   ErrorObject() : code(ErrorCode::OK), errMsg("") {}
   ErrorObject(ErrorCode err, std::string msg)
       : code(err), errMsg(std::move(msg)) {}
+  ErrorObject(iree_status_t status) {
+    if (iree_status_is_ok(status)) {
+      code = ErrorCode::OK;
+      errMsg = "";
+      return;
+    }
+    code = ErrorCode::RuntimeFailure;
+    // Write error message into `errMsg` variable using the runtime's fprint
+    // based reporting.
+    iree_status_fprint(FprintToString(errMsg), status);
+  }
 
   ErrorCode getCode() const { return code; }
   const std::string &getMessage() const { return errMsg; }
@@ -332,12 +391,13 @@ inline ConditionalStreamer &getLogger() {
     }                                                                          \
   } while (false);
 
-#define FUSILLI_CHECK_ERROR(x)                                                 \
+#define FUSILLI_CHECK_ERROR(expr)                                              \
   do {                                                                         \
-    if (isError(x)) {                                                          \
+    ErrorObject _maybeError = (expr);                                          \
+    if (isError(_maybeError)) {                                                \
       FUSILLI_LOG_LABEL_RED("ERROR: ");                                        \
-      FUSILLI_LOG_ENDL(#x << " at " << __FILE__ << ":" << __LINE__);           \
-      return ErrorObject(x);                                                   \
+      FUSILLI_LOG_ENDL(#expr << " at " << __FILE__ << ":" << __LINE__);        \
+      return _maybeError;                                                      \
     }                                                                          \
   } while (false);
 
