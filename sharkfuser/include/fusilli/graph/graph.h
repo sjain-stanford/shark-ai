@@ -130,7 +130,7 @@ public:
   //
   // `reCompiled` will be set to true if a value is passed and the cache was
   // (re)generated; this parameter is useful for testing.
-  ErrorOr<std::string>
+  ErrorOr<std::filesystem::path>
   readOrGenerateCompiledArtifact(const std::string &generatedAsm,
                                  bool remove = true,
                                  std::optional<bool> *reCompiled = nullptr) {
@@ -147,7 +147,7 @@ public:
       *reCompiled = true;
     }
     cache_ = FUSILLI_TRY(generateCompiledArtifacts(generatedAsm, remove));
-    return cache_->output.read();
+    return cache_->output.path;
   }
 
 private:
