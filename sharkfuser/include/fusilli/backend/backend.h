@@ -20,13 +20,19 @@
 
 namespace fusilli {
 
-// Where do we want the generated code to run?
+// Target backend to run the generated kernels on
 enum class Backend {
   CPU,
   GFX942,
 };
 
-// The flags corresponding to each compile backend.
+// Map from backend to IREE HAL driver name
+static const std::unordered_map<Backend, const char *> halDriver = {
+    {Backend::CPU, "local-task"},
+    {Backend::GFX942, "hip"},
+};
+
+// Map from backend to IREE compile flags
 static const std::unordered_map<Backend, std::vector<std::string>>
     backendFlags = {
         {

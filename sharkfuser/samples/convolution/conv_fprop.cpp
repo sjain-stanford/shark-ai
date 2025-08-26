@@ -48,4 +48,7 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
   ErrorOr<std::string> vmfb =
       graph->readOrGenerateCompiledArtifact(*generatedAsm);
   REQUIRE(isOk(vmfb));
+
+  fusilliHandle cpuHandle = fusilliHandle(Backend::CPU);
+  fusilliHandle gpuHandle = fusilliHandle(Backend::GFX942);
 }

@@ -393,11 +393,10 @@ inline ConditionalStreamer &getLogger() {
 
 #define FUSILLI_CHECK_ERROR(expr)                                              \
   do {                                                                         \
-    ErrorObject _maybeError = (expr);                                          \
-    if (isError(_maybeError)) {                                                \
+    if (isError(expr)) {                                                       \
       FUSILLI_LOG_LABEL_RED("ERROR: ");                                        \
       FUSILLI_LOG_ENDL(#expr << " at " << __FILE__ << ":" << __LINE__);        \
-      return _maybeError;                                                      \
+      return ErrorObject(expr);                                                \
     }                                                                          \
   } while (false);
 
@@ -415,13 +414,12 @@ inline ConditionalStreamer &getLogger() {
 //   }
 #define FUSILLI_TRY(expr)                                                      \
   ({                                                                           \
-    auto _errorOr = (expr);                                                    \
-    if (isError(_errorOr)) {                                                   \
+    if (isError(expr)) {                                                       \
       FUSILLI_LOG_LABEL_RED("ERROR: ");                                        \
       FUSILLI_LOG_ENDL(#expr << " at " << __FILE__ << ":" << __LINE__);        \
-      return ErrorObject(_errorOr);                                            \
+      return ErrorObject(expr);                                                \
     }                                                                          \
-    std::move(*_errorOr);                                                      \
+    std::move(*expr);                                                          \
   })
 
 #endif // FUSILLI_SUPPORT_LOGGING_H
