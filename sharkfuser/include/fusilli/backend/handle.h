@@ -62,28 +62,35 @@ private:
   // Create IREE HAL device for this handle
   std::unique_ptr<iree_hal_device_t, IreeHalDeviceDeleter>
   getPerHandleDevice() {
-    iree_hal_device_t *raw_device = nullptr;
-    iree_runtime_instance_try_create_default_device(
-        instance_.get(), iree_make_cstring_view(halDriver.at(backend_)),
-        &raw_device);
-    return std::unique_ptr<iree_hal_device_t, IreeHalDeviceDeleter>(raw_device);
+    ErrorOr<std::unique_ptr<iree_hal_device_t, IreeHalDeviceDeleter>>
+        uniqueDevice = [this]()
+        -> ErrorOr<std::unique_ptr<iree_hal_device_t, IreeHalDeviceDeleter>> {
+      iree_hal_device_t *rawDevice = nullptr;
+      FUSILLI_CHECK_ERROR(iree_runtime_instance_try_create_default_device(
+          instance_.get(), iree_make_cstring_view(halDriver.at(backend_)),
+          &rawDevice));
+      return ok(
+          std::unique_ptr<iree_hal_device_t, IreeHalDeviceDeleter>(rawDevice));
+    }();
+    return std::move(*uniqueDevice);
   }
 
   // Create static singleton IREE runtime instance shared by all handles
   static std::shared_ptr<iree_runtime_instance_t> getSharedInstance() {
-    static std::shared_ptr<iree_runtime_instance_t> shared_instance = []() {
+    static ErrorOr<std::shared_ptr<iree_runtime_instance_t>> sharedInstance =
+        []() -> ErrorOr<std::shared_ptr<iree_runtime_instance_t>> {
       iree_runtime_instance_options_t opts;
       iree_runtime_instance_options_initialize(&opts);
       iree_runtime_instance_options_use_all_available_drivers(&opts);
 
-      iree_runtime_instance_t *raw_instance = nullptr;
-      iree_runtime_instance_create(&opts, iree_allocator_system(),
-                                   &raw_instance);
+      iree_runtime_instance_t *rawInstance = nullptr;
+      FUSILLI_CHECK_ERROR(iree_runtime_instance_create(
+          &opts, iree_allocator_system(), &rawInstance));
 
-      return std::shared_ptr<iree_runtime_instance_t>(
-          raw_instance, IreeRuntimeInstanceDeleter());
+      return ok(std::shared_ptr<iree_runtime_instance_t>(
+          rawInstance, IreeRuntimeInstanceDeleter()));
     }();
-    return shared_instance;
+    return *sharedInstance;
   }
 
   Backend backend_;
