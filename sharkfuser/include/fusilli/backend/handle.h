@@ -42,17 +42,17 @@ struct IreeHalDeviceDeleter {
   }
 };
 
-class fusilliHandle {
+class FusilliHandle {
 public:
-  fusilliHandle(Backend backend)
+  FusilliHandle(Backend backend)
       : backend_(backend), instance_(getSharedInstance()),
         device_(getPerHandleDevice()) {}
 
   // No copies allowed, but moves are OK
-  fusilliHandle(const fusilliHandle &) = delete;
-  fusilliHandle &operator=(const fusilliHandle &) = delete;
-  fusilliHandle(fusilliHandle &&) = default;
-  fusilliHandle &operator=(fusilliHandle &&) = default;
+  FusilliHandle(const FusilliHandle &) = delete;
+  FusilliHandle &operator=(const FusilliHandle &) = delete;
+  FusilliHandle(FusilliHandle &&) = default;
+  FusilliHandle &operator=(FusilliHandle &&) = default;
 
   Backend getBackend() const { return backend_; }
   iree_hal_device_t *getDevice() const { return device_.get(); }
