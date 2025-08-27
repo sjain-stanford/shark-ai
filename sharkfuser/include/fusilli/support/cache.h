@@ -62,7 +62,7 @@ public:
   static ErrorOr<CacheFile> create(const std::string &graphName,
                                    const std::string &fileName, bool remove) {
     std::filesystem::path path = CacheFile::getPath(graphName, fileName);
-    FUSILLI_LOG_LABEL_ENDL("Creating Cache file");
+    FUSILLI_LOG_LABEL_ENDL("INFO: Creating Cache file");
     FUSILLI_LOG_ENDL(path);
 
     // Create directory $HOME/.cache/fusilli/<graphName>

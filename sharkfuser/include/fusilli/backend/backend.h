@@ -14,6 +14,7 @@
 #ifndef FUSILLI_BACKEND_BACKEND_H
 #define FUSILLI_BACKEND_BACKEND_H
 
+#include <ostream>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -25,6 +26,21 @@ enum class Backend {
   CPU,
   GFX942,
 };
+
+static const std::unordered_map<Backend, std::string> BackendToStr = {
+    {Backend::CPU, "CPU"},
+    {Backend::GFX942, "GFX942"},
+};
+
+// Stream operator for Backend
+inline std::ostream &operator<<(std::ostream &os, const Backend &backend) {
+  auto it = BackendToStr.find(backend);
+  if (it != BackendToStr.end())
+    os << it->second;
+  else
+    os << "UNKNOWN_BACKEND";
+  return os;
+}
 
 // Map from backend to IREE HAL driver name
 static const std::unordered_map<Backend, const char *> halDriver = {
