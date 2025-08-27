@@ -16,7 +16,6 @@
 #include "fusilli/backend/backend.h"
 #include "fusilli/support/logging.h"
 
-#include <iree/base/api.h>
 #include <iree/hal/api.h>
 #include <iree/runtime/api.h>
 
@@ -48,6 +47,7 @@ public:
   static ErrorOr<FusilliHandle> create(Backend backend) {
     FUSILLI_LOG_LABEL_ENDL("INFO: Creating handle for backend: " << backend);
 
+    // Create shared IREE runtime instance (thread-safe)
     auto instance = getSharedInstance();
     FUSILLI_RETURN_ERROR_IF(isError(instance), ErrorCode::RuntimeFailure,
                             "Failed to create shared IREE runtime instance");
@@ -55,7 +55,7 @@ public:
     // Create a handle obj without initializing the device yet
     auto handle = FusilliHandle(backend, std::move(*instance));
 
-    // Lazy init device
+    // Lazy create handle-specific IREE HAL device
     auto device = handle.getPerHandleDevice();
     FUSILLI_RETURN_ERROR_IF(isError(device), ErrorCode::RuntimeFailure,
                             "Failed to create per-handle IREE HAL device");
