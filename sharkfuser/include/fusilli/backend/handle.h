@@ -43,8 +43,9 @@ struct IreeHalDeviceDeleter {
   }
 };
 
-using IreeRuntimeInstanceSharedPtr = std::shared_ptr<iree_runtime_instance_t>;
-using IreeHalDeviceUniquePtr =
+using IreeRuntimeInstanceSharedPtrType =
+    std::shared_ptr<iree_runtime_instance_t>;
+using IreeHalDeviceUniquePtrType =
     std::unique_ptr<iree_hal_device_t, IreeHalDeviceDeleter>;
 
 class FusilliHandle {
@@ -88,10 +89,10 @@ private:
   // lambda for `call_once` expects a void callable but in our case we
   // return ErrorObject inside `FUSILLI_CHECK_ERROR` so it might need
   // some restructuring to properly capture/propagate the error state.
-  static ErrorOr<IreeRuntimeInstanceSharedPtr> getSharedInstance() {
+  static ErrorOr<IreeRuntimeInstanceSharedPtrType> getSharedInstance() {
     // Mutex for thread-safe initialization of sharedInstance
     static std::mutex instanceMutex;
-    static IreeRuntimeInstanceSharedPtr sharedInstance;
+    static IreeRuntimeInstanceSharedPtrType sharedInstance;
 
     std::lock_guard<std::mutex> lock(instanceMutex);
     if (sharedInstance == nullptr) {
@@ -103,7 +104,7 @@ private:
       FUSILLI_CHECK_ERROR(iree_runtime_instance_create(
           &opts, iree_allocator_system(), &rawInstance));
 
-      sharedInstance = IreeRuntimeInstanceSharedPtr(
+      sharedInstance = IreeRuntimeInstanceSharedPtrType(
           rawInstance, IreeRuntimeInstanceDeleter());
     }
 
@@ -111,23 +112,23 @@ private:
   }
 
   // Create IREE HAL device for this handle
-  ErrorOr<IreeHalDeviceUniquePtr> getPerHandleDevice() const {
+  ErrorOr<IreeHalDeviceUniquePtrType> getPerHandleDevice() const {
     iree_hal_device_t *rawDevice = nullptr;
     FUSILLI_CHECK_ERROR(iree_runtime_instance_try_create_default_device(
         instance_.get(), iree_make_cstring_view(halDriver.at(backend_)),
         &rawDevice));
-    return ok(IreeHalDeviceUniquePtr(rawDevice));
+    return ok(IreeHalDeviceUniquePtrType(rawDevice));
   }
 
   // Private constructor (use factory create method for handle creation)
-  FusilliHandle(Backend backend, IreeRuntimeInstanceSharedPtr instance)
+  FusilliHandle(Backend backend, IreeRuntimeInstanceSharedPtrType instance)
       : backend_(backend), instance_(instance) {}
 
   // Order of initialization matters here.
   // `device_` depends on `backend_` and `instance_`.
   Backend backend_;
-  IreeRuntimeInstanceSharedPtr instance_;
-  IreeHalDeviceUniquePtr device_;
+  IreeRuntimeInstanceSharedPtrType instance_;
+  IreeHalDeviceUniquePtrType device_;
 };
 
 } // namespace fusilli
