@@ -6,7 +6,8 @@
 
 //===----------------------------------------------------------------------===//
 //
-// This file contains the code to create/destroy Fusilli handles.
+// This file contains the code to create and manage Fusilli handles
+// which wrap around shared IREE runtime resources (instances and devices).
 //
 //===----------------------------------------------------------------------===//
 
@@ -42,6 +43,10 @@ struct IreeHalDeviceDeleter {
   }
 };
 
+using IreeRuntimeInstanceSharedPtr = std::shared_ptr<iree_runtime_instance_t>;
+using IreeHalDeviceUniquePtr =
+    std::unique_ptr<iree_hal_device_t, IreeHalDeviceDeleter>;
+
 class FusilliHandle {
 public:
   static ErrorOr<FusilliHandle> create(Backend backend) {
@@ -76,11 +81,12 @@ public:
   iree_runtime_instance_t *getInstance() const { return instance_.get(); }
 
 private:
-  // Create static singleton IREE runtime instance shared by all handles
-  static ErrorOr<std::shared_ptr<iree_runtime_instance_t>> getSharedInstance() {
+  // Create static singleton IREE runtime instance shared by all handles and
+  // threads
+  static ErrorOr<IreeRuntimeInstanceSharedPtr> getSharedInstance() {
     // Mutex for thread-safe initialization of sharedInstance
     static std::mutex instanceMutex;
-    static std::shared_ptr<iree_runtime_instance_t> sharedInstance;
+    static IreeRuntimeInstanceSharedPtr sharedInstance;
 
     std::lock_guard<std::mutex> lock(instanceMutex);
     if (sharedInstance == nullptr) {
@@ -92,7 +98,7 @@ private:
       FUSILLI_CHECK_ERROR(iree_runtime_instance_create(
           &opts, iree_allocator_system(), &rawInstance));
 
-      sharedInstance = std::shared_ptr<iree_runtime_instance_t>(
+      sharedInstance = IreeRuntimeInstanceSharedPtr(
           rawInstance, IreeRuntimeInstanceDeleter());
     }
 
@@ -100,26 +106,23 @@ private:
   }
 
   // Create IREE HAL device for this handle
-  ErrorOr<std::unique_ptr<iree_hal_device_t, IreeHalDeviceDeleter>>
-  getPerHandleDevice() const {
+  ErrorOr<IreeHalDeviceUniquePtr> getPerHandleDevice() const {
     iree_hal_device_t *rawDevice = nullptr;
     FUSILLI_CHECK_ERROR(iree_runtime_instance_try_create_default_device(
         instance_.get(), iree_make_cstring_view(halDriver.at(backend_)),
         &rawDevice));
-    return ok(
-        std::unique_ptr<iree_hal_device_t, IreeHalDeviceDeleter>(rawDevice));
+    return ok(IreeHalDeviceUniquePtr(rawDevice));
   }
 
   // Private constructor (use factory create method for handle creation)
-  FusilliHandle(Backend backend,
-                std::shared_ptr<iree_runtime_instance_t> instance)
+  FusilliHandle(Backend backend, IreeRuntimeInstanceSharedPtr instance)
       : backend_(backend), instance_(instance) {}
 
   // Order of initialization matters here.
   // `device_` depends on `backend_` and `instance_`.
   Backend backend_;
-  std::shared_ptr<iree_runtime_instance_t> instance_;
-  std::unique_ptr<iree_hal_device_t, IreeHalDeviceDeleter> device_;
+  IreeRuntimeInstanceSharedPtr instance_;
+  IreeHalDeviceUniquePtr device_;
 };
 
 } // namespace fusilli
