@@ -9,7 +9,6 @@ add_sharkfuser_test(
   SRCS
     test_hip_buffer_import_api.cpp
   DEPS
-    libfusilli
     iree_runtime_unified
     Catch2::Catch2WithMain
 )

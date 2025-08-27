@@ -4,16 +4,14 @@
 // See https://llvm.org/LICENSE.txt for license information.
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-#include <fusilli.h>
 #include <hip/hip_runtime.h>
+#include <iree/base/status.h>
 #include <iree/hal/api.h>
 #include <iree/runtime/api.h>
 
 #include <catch2/catch_test_macros.hpp>
 #include <cstdint>
 #include <cstdio>
-
-using namespace fusilli;
 
 __global__ void hello_kernel() {
   printf("Hello from GPU! block %d thread %d\n", blockIdx.x, threadIdx.x);
@@ -65,12 +63,12 @@ TEST_CASE("Buffer import", "[hip_tests]") {
   iree_runtime_instance_options_initialize(&instance_options);
   iree_runtime_instance_options_use_all_available_drivers(&instance_options);
   iree_runtime_instance_t *instance = nullptr;
-  REQUIRE(isOk(iree_runtime_instance_create(
+  REQUIRE(iree_status_is_ok(iree_runtime_instance_create(
       &instance_options, iree_allocator_system(), &instance)));
 
   // Get runtime device
   iree_hal_device_t *device = nullptr;
-  REQUIRE(isOk(iree_runtime_instance_try_create_default_device(
+  REQUIRE(iree_status_is_ok(iree_runtime_instance_try_create_default_device(
       instance, iree_make_cstring_view("hip"), &device)));
 
   // Get device allocator
@@ -106,7 +104,7 @@ TEST_CASE("Buffer import", "[hip_tests]") {
       iree_hal_buffer_release_callback_null();
 
   // Import buffer
-  REQUIRE(isOk(iree_hal_allocator_import_buffer(
+  REQUIRE(iree_status_is_ok(iree_hal_allocator_import_buffer(
       allocator, params, &external_buffer, release_callback, &out_buffer)));
 
   // Cleanup

@@ -120,7 +120,7 @@ private:
     return ok(IreeHalDeviceUniquePtrType(rawDevice));
   }
 
-  // Private constructor (use factory create method for handle creation)
+  // Private constructor (use factory `create` method for handle creation)
   FusilliHandle(Backend backend, IreeRuntimeInstanceSharedPtrType instance)
       : backend_(backend), instance_(instance) {}
 
