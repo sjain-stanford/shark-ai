@@ -81,8 +81,13 @@ public:
   iree_runtime_instance_t *getInstance() const { return instance_.get(); }
 
 private:
-  // Create static singleton IREE runtime instance shared by all handles and
-  // threads
+  // Create static singleton IREE runtime instance shared across handles/threads
+  // TODO(sjain-stanford): Consider moving to `std::call_once` to avoid
+  // paying the cost of acquiring/releasing the mutex lock on every call
+  // to `FusilliHandle::getSharedInstance()`. The only minor issue is the
+  // lambda for `call_once` expects a void callable but in our case we
+  // return ErrorObject inside `FUSILLI_CHECK_ERROR` so it might need
+  // some restructuring to properly capture/propagate the error state.
   static ErrorOr<IreeRuntimeInstanceSharedPtr> getSharedInstance() {
     // Mutex for thread-safe initialization of sharedInstance
     static std::mutex instanceMutex;
