@@ -87,6 +87,10 @@ if(SHARKFUSER_DEBUG_BUILD OR SHARKFUSER_CODE_COVERAGE)
   set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Debug build" FORCE)
 endif()
 
+if(EXISTS "/dev/kfd")
+  add_definitions(-DFUSILLI_ENABLE_AMDGPU)
+endif()
+
 # Build samples
 if(SHARKFUSER_BUILD_SAMPLES)
   message(STATUS "Building SharkFuser samples")

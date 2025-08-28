@@ -18,9 +18,11 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
   SECTION("cpu backend") {
     handle.emplace(FusilliHandle::create(Backend::CPU));
   }
+#ifdef FUSILLI_ENABLE_AMDGPU
   SECTION("gfx942 backend") {
     handle.emplace(FusilliHandle::create(Backend::GFX942));
   }
+#endif
   REQUIRE(handle.has_value());
   REQUIRE(isOk(*handle));
 

@@ -41,7 +41,7 @@ Graph validGraph() {
 };
 
 TEST_CASE("Graph `readOrGenerateCompiledArtifact`", "[graph]") {
-  SECTION("cache generation and invalidation") {
+  SECTION("cache generation and invalidation with different backend") {
     FusilliHandle cpuHandle =
         FUSILLI_REQUIRE_UNWRAP(FusilliHandle::create(Backend::CPU));
     FusilliHandle gpuHandle =
