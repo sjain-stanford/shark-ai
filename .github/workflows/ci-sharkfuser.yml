@@ -90,7 +90,12 @@ jobs:
     - name: Debug cache directory permissions
       if: ${{ matrix.name == 'gfx942_clang18_debug' }}
       run: |
+        ls -ltra /dev/
+        getent group render
+        getent group video
         ${{ env.DOCKER_DIR }}/exec_docker.sh ls -ltra /dev/
+        ${{ env.DOCKER_DIR }}/exec_docker.sh getent group render
+        ${{ env.DOCKER_DIR }}/exec_docker.sh getent group video
         ${{ env.DOCKER_DIR }}/exec_docker.sh rocm-smi
         ${{ env.DOCKER_DIR }}/exec_docker.sh rocminfo
         ls -ld $HOME/.cache
