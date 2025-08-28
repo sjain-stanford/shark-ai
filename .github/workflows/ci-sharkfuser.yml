@@ -79,6 +79,13 @@ jobs:
         path: docker
         ref: 5ac6995d6f08c9db8486a0b851f7db3aab3cee42
 
+    - name: Debug cache directory permissions
+      run: |
+        ls -ld $HOME/.cache
+        ls -ld $HOME/.cache/fusilli
+        ls -ld $HOME/.cache/fusilli/test_graph || echo "test_graph does not exist"
+        whoami
+
     - name: Build sharkfuser
       working-directory: ${{ env.SHARKFUSER_DIR }}
       run: |
@@ -89,7 +96,7 @@ jobs:
                  cmake --build build --target all"
 
     - name: Test sharkfuser
-      if: ${{ matrix.name != 'Ubuntu (GCC 13, Code Coverage)' }}
+      if: ${{ matrix.name != 'CPU (GCC 13, Code Coverage)' }}
       working-directory: ${{ env.SHARKFUSER_DIR }}
       run: |
         ${{ env.DOCKER_DIR }}/exec_docker.sh \
@@ -97,7 +104,7 @@ jobs:
         tests/test_cache_empty.sh
 
     - name: Code coverage sharkfuser
-      if: ${{ matrix.name == 'Ubuntu (GCC 13, Code Coverage)' }}
+      if: ${{ matrix.name == 'CPU (GCC 13, Code Coverage)' }}
       working-directory: ${{ env.SHARKFUSER_DIR }}
       run: |
         ${{ env.DOCKER_DIR }}/exec_docker.sh \
@@ -107,7 +114,7 @@ jobs:
                  genhtml build/coverage.info --output-directory coverage_report"
 
     - name: Upload code coverage report
-      if: ${{ matrix.name == 'Ubuntu (GCC 13, Code Coverage)' }}
+      if: ${{ matrix.name == 'CPU (GCC 13, Code Coverage)' }}
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: coverage-report
