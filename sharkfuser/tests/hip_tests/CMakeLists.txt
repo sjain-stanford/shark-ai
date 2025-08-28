@@ -4,7 +4,6 @@
 # See https://llvm.org/LICENSE.txt for license information.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-
 enable_language(HIP)  # enables HIP language for this dir and this dir only
 
 add_sharkfuser_test(

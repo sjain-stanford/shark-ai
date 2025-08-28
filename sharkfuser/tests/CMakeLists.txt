@@ -4,7 +4,6 @@
 # See https://llvm.org/LICENSE.txt for license information.
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-
 # Find prebuilt Catch2 library
 find_package(Catch2 3 REQUIRED)
 
@@ -19,7 +18,6 @@ sharkfuser_find_program(iree-opt "Please install iree-opt (e.g., pip install ire
 
 # Enable HIP tests if AMD GPU is detected and HIP is found
 if(EXISTS "/dev/kfd")
-  add_subdirectory(amdgpu_tests)
   set(HIP_PLATFORM "amd")
   find_package(HIP QUIET)
   if(HIP_FOUND)
