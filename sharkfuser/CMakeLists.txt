@@ -93,20 +93,19 @@ option(SHARKFUSER_SYSTEMS_AMDGPU "Builds for AMD GPU systems" ON)
 message(STATUS "SharkFuser supported systems:")
 if(SHARKFUSER_SYSTEMS_AMDGPU)
   message(STATUS "  - AMD GPU")
-  add_definitions(-DFUSILLI_ENABLE_AMDGPU)
 endif()
 message(STATUS "  - Host")
 
-# # Enable AMD GPU samples and tests if GPU is detected
-# if(SHARKFUSER_SYSTEMS_AMDGPU)
-#   # Check for Linux AMD GPU device node - `/dev/kfd`
-#   if(EXISTS "/dev/kfd")
-#     message(STATUS "AMD GPU detected: Enabling GPU samples and tests")
-#     add_definitions(-DFUSILLI_ENABLE_AMDGPU)
-#   else()
-#     message(FATAL_ERROR "SHARKFUSER_SYSTEMS_AMDGPU is ON but `/dev/kfd` not found: No AMD GPU detected on this system.")
-#   endif()
-# endif()
+# Enable AMD GPU samples and tests if GPU is detected
+if(SHARKFUSER_SYSTEMS_AMDGPU)
+  # Check for Linux AMD GPU device node - `/dev/kfd`
+  if(EXISTS "/dev/kfd")
+    message(STATUS "AMD GPU detected: Enabling GPU samples and tests")
+    add_definitions(-DFUSILLI_ENABLE_AMDGPU)
+  else()
+    message(FATAL_ERROR "SHARKFUSER_SYSTEMS_AMDGPU is ON but `/dev/kfd` not found: No AMD GPU detected on this system.")
+  endif()
+endif()
 
 # Build samples
 if(SHARKFUSER_BUILD_SAMPLES)
