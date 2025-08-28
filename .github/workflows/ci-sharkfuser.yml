@@ -53,7 +53,7 @@ jobs:
               -DSHARKFUSER_CODE_COVERAGE=OFF
               -DSHARKFUSER_SYSTEMS_AMDGPU=OFF
           - name: gfx942_clang18_debug
-            runs-on: linux-mi325-1gpu-ossci-nod-ai
+            runs-on: linux-mi325-2gpu-ossci-nod-ai
             cmake-options:
               -DCMAKE_C_COMPILER=clang-18
               -DCMAKE_CXX_COMPILER=clang++-18
@@ -82,12 +82,14 @@ jobs:
         path: docker
         ref: 9a8e0ad5708b6a42eeb35aa9e9f35da1ef4df86e
 
-    - name: Create cache directory
+    - name: Debug On Host
+      if: ${{ matrix.name == 'gfx942_clang18_debug' }}
       run: |
-        mkdir -p $HOME/.cache/fusilli
-        chmod -R u+w $HOME/.cache/fusilli
+        ls -ltra /dev/
+        getent group render
+        getent group video
 
-    - name: Debug cache directory permissions
+    - name: Debug in container
       if: ${{ matrix.name == 'gfx942_clang18_debug' }}
       run: |
         ls -ltra /dev/
