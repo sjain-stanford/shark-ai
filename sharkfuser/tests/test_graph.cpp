@@ -121,7 +121,6 @@ Graph validGraph() {
   g.setName("test_graph");
   int64_t n = 16, c = 128, h = 64, w = 64, k = 256, r = 1, s = 1;
   g.setName("test_graph");
-  g.setBackend(Backend::CPU);
   g.setIODataType(DataType::Half).setComputeDataType(DataType::Float);
   auto X = g.tensor(TensorAttr()
                         .setName("image")
@@ -145,56 +144,77 @@ Graph validGraph() {
 
 TEST_CASE("Graph `readOrGenerateCompiledArtifact`", "[graph]") {
   SECTION("cache generation and invalidation") {
+    FusilliHandle cpuHandle =
+        FUSILLI_REQUIRE_UNWRAP(FusilliHandle::create(Backend::CPU));
+    FusilliHandle gpuHandle =
+        FUSILLI_REQUIRE_UNWRAP(FusilliHandle::create(Backend::GFX942));
+
     Graph g = validGraph();
 
     std::string generatedAsm = FUSILLI_REQUIRE_UNWRAP(g.emitAsm());
 
     // Cache should be empty, compilation artifacts should be generated.
     std::optional<bool> reCompiled = std::nullopt;
-    REQUIRE(isOk(g.readOrGenerateCompiledArtifact(generatedAsm, /*remove=*/true,
+    REQUIRE(isOk(g.readOrGenerateCompiledArtifact(cpuHandle, generatedAsm,
+                                                  /*remove=*/true,
                                                   /*reCompiled=*/&reCompiled)));
     REQUIRE(reCompiled.has_value());
     REQUIRE(reCompiled.value());
 
     // Cache should hit, no compilation should be required.
     reCompiled = std::nullopt;
-    REQUIRE(isOk(g.readOrGenerateCompiledArtifact(generatedAsm, /*remove=*/true,
+    REQUIRE(isOk(g.readOrGenerateCompiledArtifact(cpuHandle, generatedAsm,
+                                                  /*remove=*/true,
                                                   /*reCompiled=*/&reCompiled)));
     REQUIRE(reCompiled.has_value());
     REQUIRE(!reCompiled.value());
 
-    // Cache should miss based on different compile command.
-    g.setBackend(Backend::GFX942);
+    // Cache should miss based on different handle / device / compile command.
     reCompiled = std::nullopt;
-    REQUIRE(isOk(g.readOrGenerateCompiledArtifact(generatedAsm, /*remove=*/true,
+    REQUIRE(isOk(g.readOrGenerateCompiledArtifact(gpuHandle, generatedAsm,
+                                                  /*remove=*/true,
                                                   /*reCompiled=*/&reCompiled)));
     REQUIRE(reCompiled.has_value());
     REQUIRE(reCompiled.value());
 
+    // Cache should hit with the different handle the second time.
+    reCompiled = std::nullopt;
+    REQUIRE(isOk(g.readOrGenerateCompiledArtifact(gpuHandle, generatedAsm,
+                                                  /*remove=*/true,
+                                                  /*reCompiled=*/&reCompiled)));
+    REQUIRE(reCompiled.has_value());
+    REQUIRE(!reCompiled.value());
+
     // Cache should miss because of different generated asm.
     reCompiled = std::nullopt;
-    REQUIRE(isOk(g.readOrGenerateCompiledArtifact(
-        generatedAsm + " ", /*remove=*/true, /*reCompiled=*/&reCompiled)));
+    REQUIRE(isOk(g.readOrGenerateCompiledArtifact(gpuHandle, generatedAsm + " ",
+                                                  /*remove=*/true,
+                                                  /*reCompiled=*/&reCompiled)));
     REQUIRE(reCompiled.has_value());
     REQUIRE(reCompiled.value());
 
     // Cache should hit with the same generated asm.
     reCompiled = std::nullopt;
-    REQUIRE(isOk(g.readOrGenerateCompiledArtifact(
-        generatedAsm + " ", /*remove=*/true, /*reCompiled=*/&reCompiled)));
+    REQUIRE(isOk(g.readOrGenerateCompiledArtifact(gpuHandle, generatedAsm + " ",
+                                                  /*remove=*/true,
+                                                  /*reCompiled=*/&reCompiled)));
     REQUIRE(reCompiled.has_value());
     REQUIRE(!reCompiled.value());
 
     // Cache should miss because graph name change.
     g.setName("new_graph_name");
     reCompiled = std::nullopt;
-    REQUIRE(isOk(g.readOrGenerateCompiledArtifact(
-        generatedAsm + " ", /*remove=*/true, /*reCompiled=*/&reCompiled)));
+    REQUIRE(isOk(g.readOrGenerateCompiledArtifact(gpuHandle, generatedAsm + " ",
+                                                  /*remove=*/true,
+                                                  /*reCompiled=*/&reCompiled)));
     REQUIRE(reCompiled.has_value());
     REQUIRE(reCompiled.value());
   }
 
   SECTION("should not read cached items from other/previous Graph instances") {
+    FusilliHandle handle =
+        FUSILLI_REQUIRE_UNWRAP(FusilliHandle::create(Backend::CPU));
+
     std::string generatedAsm;
     {
       Graph g = validGraph();
@@ -204,14 +224,14 @@ TEST_CASE("Graph `readOrGenerateCompiledArtifact`", "[graph]") {
       // Cache should be empty.
       std::optional<bool> reCompiled = std::nullopt;
       REQUIRE(isOk(g.readOrGenerateCompiledArtifact(
-          generatedAsm, /*remove=*/false, /*reCompiled=*/&reCompiled)));
+          handle, generatedAsm, /*remove=*/false, /*reCompiled=*/&reCompiled)));
       REQUIRE(reCompiled.has_value());
       REQUIRE(reCompiled.value());
 
       // Cache should hit with the same generated asm.
       reCompiled = std::nullopt;
       REQUIRE(isOk(g.readOrGenerateCompiledArtifact(
-          generatedAsm, /*remove=*/false, /*reCompiled=*/&reCompiled)));
+          handle, generatedAsm, /*remove=*/false, /*reCompiled=*/&reCompiled)));
       REQUIRE(reCompiled.has_value());
       REQUIRE(!reCompiled.value());
     }
@@ -225,18 +245,22 @@ TEST_CASE("Graph `readOrGenerateCompiledArtifact`", "[graph]") {
 
     // New instance should regenerate cache.
     std::optional<bool> reCompiled = std::nullopt;
-    REQUIRE(isOk(g.readOrGenerateCompiledArtifact(generatedAsm, /*remove=*/true,
+    REQUIRE(isOk(g.readOrGenerateCompiledArtifact(handle, generatedAsm,
+                                                  /*remove=*/true,
                                                   /*reCompiled=*/&reCompiled)));
     REQUIRE(reCompiled.has_value());
     REQUIRE(reCompiled.value());
   }
 
   SECTION("Invalid input IR") {
+    FusilliHandle handle =
+        FUSILLI_REQUIRE_UNWRAP(FusilliHandle::create(Backend::CPU));
     std::string graphName;
     {
       Graph g;
       g.setName("invalid_input_ir");
-      ErrorObject err = g.readOrGenerateCompiledArtifact("invalid mlir");
+      ErrorObject err =
+          g.readOrGenerateCompiledArtifact(handle, "invalid mlir");
       REQUIRE(isError(err));
       REQUIRE(err.getCode() == ErrorCode::CompileFailure);
       REQUIRE(err.getMessage() == "iree-compile command failed");

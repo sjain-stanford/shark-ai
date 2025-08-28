@@ -12,6 +12,18 @@
 using namespace fusilli;
 
 TEST_CASE("Convolution fprop", "[conv][graph]") {
+
+  // Parameterize sample by backend
+  std::optional<ErrorOr<FusilliHandle>> handle;
+  SECTION("cpu backend") {
+    handle.emplace(FusilliHandle::create(Backend::CPU));
+  }
+  SECTION("gfx942 backend") {
+    handle.emplace(FusilliHandle::create(Backend::GFX942));
+  }
+  REQUIRE(handle.has_value());
+  REQUIRE(isOk(*handle));
+
   int64_t n = 16, c = 128, h = 64, w = 64, k = 256, r = 1, s = 1;
 
   auto graph = std::make_shared<Graph>();
@@ -46,12 +58,6 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
   REQUIRE(isOk(generatedAsm));
 
   ErrorOr<std::string> vmfb =
-      graph->readOrGenerateCompiledArtifact(*generatedAsm);
+      graph->readOrGenerateCompiledArtifact(**handle, *generatedAsm);
   REQUIRE(isOk(vmfb));
-
-  ErrorOr<FusilliHandle> cpuHandle = FusilliHandle::create(Backend::CPU);
-  REQUIRE(isOk(cpuHandle));
-
-  ErrorOr<FusilliHandle> gpuHandle = FusilliHandle::create(Backend::GFX942);
-  REQUIRE(isOk(gpuHandle));
 }

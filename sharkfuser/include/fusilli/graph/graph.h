@@ -15,7 +15,7 @@
 #define FUSILLI_GRAPH_GRAPH_H
 
 #include "fusilli/attributes/tensor_attributes.h"
-#include "fusilli/backend/backend.h"
+#include "fusilli/backend/handle.h"
 #include "fusilli/graph/context.h"
 #include "fusilli/node/conv_node.h"
 #include "fusilli/node/node.h"
@@ -110,11 +110,6 @@ public:
     return *this;
   }
 
-  Graph &setBackend(Backend backend) {
-    context.setBackend(backend);
-    return *this;
-  }
-
   // Declarations for tensor and op builder methods go here.
   // Definitions are towards the end of this file below.
   std::shared_ptr<TensorAttr> tensor(const TensorAttr &tensor);
@@ -130,12 +125,11 @@ public:
   //
   // `reCompiled` will be set to true if a value is passed and the cache was
   // (re)generated; this parameter is useful for testing.
-  ErrorOr<std::filesystem::path>
-  readOrGenerateCompiledArtifact(const std::string &generatedAsm,
-                                 bool remove = true,
-                                 std::optional<bool> *reCompiled = nullptr) {
+  ErrorOr<std::filesystem::path> readOrGenerateCompiledArtifact(
+      const FusilliHandle &handle, const std::string &generatedAsm,
+      bool remove = true, std::optional<bool> *reCompiled = nullptr) {
     // Check for cache hit.
-    if (FUSILLI_TRY(validateCache(generatedAsm))) {
+    if (FUSILLI_TRY(validateCache(handle, generatedAsm))) {
       if (reCompiled) {
         *reCompiled = false;
       }
@@ -146,7 +140,8 @@ public:
     if (reCompiled) {
       *reCompiled = true;
     }
-    cache_ = FUSILLI_TRY(generateCompiledArtifacts(generatedAsm, remove));
+    cache_ =
+        FUSILLI_TRY(generateCompiledArtifacts(handle, generatedAsm, remove));
     return cache_->output.path;
   }
 
@@ -174,10 +169,11 @@ private:
   std::set<std::shared_ptr<TensorAttr>, TensorAttrSortByName>
       fullGraphOutputsSorted_;
 
-  std::string buildCompileCommand(const CacheFile &input,
+  std::string buildCompileCommand(const FusilliHandle &handle,
+                                  const CacheFile &input,
                                   const CacheFile &output) {
     std::vector<std::string> args = {IREE_COMPILE_PATH, input.path};
-    auto &flags = backendFlags.at(context.getBackend());
+    auto &flags = backendFlags.at(handle.getBackend());
     args.insert(args.end(), flags.begin(), flags.end());
     args.push_back("-o");
     args.push_back(output.path);
@@ -195,7 +191,8 @@ private:
   // `remove = true` to remove cache files when returned `CachedAssets` lifetime
   // ends.
   ErrorOr<CachedAssets>
-  generateCompiledArtifacts(const std::string &generatedAsm, bool remove) {
+  generateCompiledArtifacts(const FusilliHandle &handle,
+                            const std::string &generatedAsm, bool remove) {
     FUSILLI_LOG_LABEL_ENDL("INFO: Generating compiled artifacts");
 
     // Create cache.
@@ -220,7 +217,7 @@ private:
     FUSILLI_CHECK_ERROR(cache.input.write(generatedAsm));
 
     // Build + cache + log compile command.
-    std::string cmd = buildCompileCommand(cache.input, cache.output);
+    std::string cmd = buildCompileCommand(handle, cache.input, cache.output);
     FUSILLI_CHECK_ERROR(cache.compileCommand.write(cmd));
     FUSILLI_LOG_LABEL_ENDL("INFO: iree-compile command");
     FUSILLI_LOG_ENDL(cmd);
@@ -240,7 +237,8 @@ private:
   //  - Graph name (and therefore cache path) has changed
   //  - Generated assembly differs
   //  - Compile commands have changed
-  ErrorOr<bool> validateCache(const std::string &generatedAsm) {
+  ErrorOr<bool> validateCache(const FusilliHandle &handle,
+                              const std::string &generatedAsm) {
     FUSILLI_LOG_LABEL_ENDL("INFO: Validating cache");
 
     // Check for cache miss if cache hasn't been generated.
@@ -288,7 +286,7 @@ private:
     }
 
     // Check for a cache miss on compile command.
-    std::string cmd = buildCompileCommand(input, output);
+    std::string cmd = buildCompileCommand(handle, input, output);
     if (FUSILLI_TRY(compileCommand.read()) != cmd) {
       FUSILLI_LOG_ENDL("Compile command does not match");
       return ok(false);
