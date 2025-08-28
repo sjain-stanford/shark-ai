@@ -41,9 +41,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        name: ["Ubuntu (Clang 18, Release)", "Ubuntu (Clang 18, Debug)", "Ubuntu (GCC 13, Code Coverage)"]
+        name: ["CPU (Clang 18, Release)", "GFX942 (Clang 18, Debug)", "CPU (GCC 13, Code Coverage)"]
         include:
-          - name: Ubuntu (Clang 18, Release)
+          - name: CPU (Clang 18, Release)
             runs-on: ubuntu-24.04
             cmake-options:
               -DCMAKE_C_COMPILER=clang-18
@@ -51,15 +51,15 @@ jobs:
               -DCMAKE_LINKER_TYPE=LLD
               -DSHARKFUSER_DEBUG_BUILD=OFF
               -DSHARKFUSER_CODE_COVERAGE=OFF
-          - name: Ubuntu (Clang 18, Debug)
-            runs-on: ubuntu-24.04
+          - name: GFX942 (Clang 18, Debug)
+            runs-on: amdgpu_rocm_mi325_gfx942
             cmake-options:
               -DCMAKE_C_COMPILER=clang-18
               -DCMAKE_CXX_COMPILER=clang++-18
               -DCMAKE_LINKER_TYPE=LLD
               -DSHARKFUSER_DEBUG_BUILD=ON
               -DSHARKFUSER_CODE_COVERAGE=OFF
-          - name: Ubuntu (GCC 13, Code Coverage)
+          - name: CPU (GCC 13, Code Coverage)
             runs-on: ubuntu-24.04
             cmake-options:
               -DCMAKE_C_COMPILER=gcc-13
