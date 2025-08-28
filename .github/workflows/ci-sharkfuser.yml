@@ -80,7 +80,7 @@ jobs:
       with:
         repository: sjain-stanford/docker
         path: docker
-        ref: 5ac6995d6f08c9db8486a0b851f7db3aab3cee42
+        ref: 2e72226577bf4d46168edb778490b6769aeae7f4
 
     - name: Create cache directory
       run: |
@@ -89,6 +89,7 @@ jobs:
 
     - name: Debug cache directory permissions
       run: |
+        ${{ env.DOCKER_DIR }}/exec_docker.sh ls -ltra /dev/
         ls -ld $HOME/.cache
         ls -ld $HOME/.cache/fusilli
         ls -ld $HOME/.cache/fusilli/test_graph || echo "test_graph does not exist"
