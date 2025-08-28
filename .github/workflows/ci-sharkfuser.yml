@@ -80,7 +80,7 @@ jobs:
       with:
         repository: sjain-stanford/docker
         path: docker
-        ref: 9a8e0ad5708b6a42eeb35aa9e9f35da1ef4df86e
+        ref: 3ede9e03c5eafcc3f839ab0e9360c847bb295a1a
 
     - name: Debug On Host
       if: ${{ matrix.name == 'gfx942_clang18_debug' }}
