@@ -77,7 +77,7 @@ jobs:
       with:
         repository: sjain-stanford/docker
         path: docker
-        ref: cc39889895a2d0e2187d3135d037e7c172ec7263
+        ref: 5ac6995d6f08c9db8486a0b851f7db3aab3cee42
 
     - name: Build sharkfuser
       working-directory: ${{ env.SHARKFUSER_DIR }}
