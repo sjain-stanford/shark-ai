@@ -82,12 +82,15 @@ option(SHARKFUSER_BUILD_SAMPLES "Builds C++ samples" ON)
 option(SHARKFUSER_DEBUG_BUILD "Enable debug build options" OFF)
 option(SHARKFUSER_CODE_COVERAGE "Enable code coverage for tests" OFF)
 
+# Debug build
 if(SHARKFUSER_DEBUG_BUILD OR SHARKFUSER_CODE_COVERAGE)
   message(STATUS "Setting CMAKE_BUILD_TYPE to Debug")
   set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Debug build" FORCE)
 endif()
 
+# Enable AMDGPU backend tests if AMD GPU is detected
 if(EXISTS "/dev/kfd")
+  message(STATUS "AMD GPU detected: Enabling GPU samples and tests")
   add_definitions(-DFUSILLI_ENABLE_AMDGPU)
 endif()
 

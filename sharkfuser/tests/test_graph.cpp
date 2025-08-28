@@ -144,7 +144,6 @@ Graph validGraph() {
 
 TEST_CASE("Graph `readOrGenerateCompiledArtifact`", "[graph]") {
   SECTION("cache generation and invalidation") {
-
     FusilliHandle cpuHandle =
         FUSILLI_REQUIRE_UNWRAP(FusilliHandle::create(Backend::CPU));
 #ifdef FUSILLI_ENABLE_AMDGPU
