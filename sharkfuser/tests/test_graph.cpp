@@ -144,10 +144,13 @@ Graph validGraph() {
 
 TEST_CASE("Graph `readOrGenerateCompiledArtifact`", "[graph]") {
   SECTION("cache generation and invalidation") {
+
     FusilliHandle cpuHandle =
         FUSILLI_REQUIRE_UNWRAP(FusilliHandle::create(Backend::CPU));
+#ifdef FUSILLI_ENABLE_AMDGPU
     FusilliHandle gpuHandle =
         FUSILLI_REQUIRE_UNWRAP(FusilliHandle::create(Backend::GFX942));
+#endif
 
     Graph g = validGraph();
 
@@ -169,6 +172,7 @@ TEST_CASE("Graph `readOrGenerateCompiledArtifact`", "[graph]") {
     REQUIRE(reCompiled.has_value());
     REQUIRE(!reCompiled.value());
 
+#ifdef FUSILLI_ENABLE_AMDGPU
     // Cache should miss based on different handle / device / compile command.
     reCompiled = std::nullopt;
     REQUIRE(isOk(g.readOrGenerateCompiledArtifact(gpuHandle, generatedAsm,
@@ -177,17 +181,18 @@ TEST_CASE("Graph `readOrGenerateCompiledArtifact`", "[graph]") {
     REQUIRE(reCompiled.has_value());
     REQUIRE(reCompiled.value());
 
-    // Cache should hit with the different handle the second time.
+    // Cache should hit with a re-run on the different handle.
     reCompiled = std::nullopt;
     REQUIRE(isOk(g.readOrGenerateCompiledArtifact(gpuHandle, generatedAsm,
                                                   /*remove=*/true,
                                                   /*reCompiled=*/&reCompiled)));
     REQUIRE(reCompiled.has_value());
     REQUIRE(!reCompiled.value());
+#endif
 
     // Cache should miss because of different generated asm.
     reCompiled = std::nullopt;
-    REQUIRE(isOk(g.readOrGenerateCompiledArtifact(gpuHandle, generatedAsm + " ",
+    REQUIRE(isOk(g.readOrGenerateCompiledArtifact(cpuHandle, generatedAsm + " ",
                                                   /*remove=*/true,
                                                   /*reCompiled=*/&reCompiled)));
     REQUIRE(reCompiled.has_value());
@@ -195,7 +200,7 @@ TEST_CASE("Graph `readOrGenerateCompiledArtifact`", "[graph]") {
 
     // Cache should hit with the same generated asm.
     reCompiled = std::nullopt;
-    REQUIRE(isOk(g.readOrGenerateCompiledArtifact(gpuHandle, generatedAsm + " ",
+    REQUIRE(isOk(g.readOrGenerateCompiledArtifact(cpuHandle, generatedAsm + " ",
                                                   /*remove=*/true,
                                                   /*reCompiled=*/&reCompiled)));
     REQUIRE(reCompiled.has_value());
@@ -204,7 +209,7 @@ TEST_CASE("Graph `readOrGenerateCompiledArtifact`", "[graph]") {
     // Cache should miss because graph name change.
     g.setName("new_graph_name");
     reCompiled = std::nullopt;
-    REQUIRE(isOk(g.readOrGenerateCompiledArtifact(gpuHandle, generatedAsm + " ",
+    REQUIRE(isOk(g.readOrGenerateCompiledArtifact(cpuHandle, generatedAsm + " ",
                                                   /*remove=*/true,
                                                   /*reCompiled=*/&reCompiled)));
     REQUIRE(reCompiled.has_value());
