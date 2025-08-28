@@ -79,6 +79,9 @@ jobs:
         path: docker
         ref: 5ac6995d6f08c9db8486a0b851f7db3aab3cee42
 
+    - name: Create cache directory
+      run: mkdir -p $HOME/.cache/fusilli/
+
     - name: Debug cache directory permissions
       run: |
         ls -ld $HOME/.cache
