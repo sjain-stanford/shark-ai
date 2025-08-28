@@ -88,6 +88,7 @@ jobs:
         ls -ltra /dev/
         getent group render
         getent group video
+        getent group 992
 
     - name: Debug in container
       if: ${{ matrix.name == 'gfx942_clang18_debug' }}
