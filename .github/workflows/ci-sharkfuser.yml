@@ -80,7 +80,7 @@ jobs:
       with:
         repository: sjain-stanford/docker
         path: docker
-        ref: 220a79ced8dcc0718376a2c606b4bbf1d6ee3154
+        ref: 9a8e0ad5708b6a42eeb35aa9e9f35da1ef4df86e
 
     - name: Create cache directory
       run: |
@@ -88,6 +88,7 @@ jobs:
         chmod -R u+w $HOME/.cache/fusilli
 
     - name: Debug cache directory permissions
+      if: ${{ matrix.name == 'gfx942_clang18_debug' }}
       run: |
         ${{ env.DOCKER_DIR }}/exec_docker.sh ls -ltra /dev/
         ${{ env.DOCKER_DIR }}/exec_docker.sh rocm-smi
