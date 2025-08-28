@@ -52,7 +52,7 @@ jobs:
               -DSHARKFUSER_DEBUG_BUILD=OFF
               -DSHARKFUSER_CODE_COVERAGE=OFF
           - name: GFX942 (Clang 18, Debug)
-            runs-on: amdgpu_rocm_mi325_gfx942
+            runs-on: linux-mi325-1gpu-ossci-nod-ai
             cmake-options:
               -DCMAKE_C_COMPILER=clang-18
               -DCMAKE_CXX_COMPILER=clang++-18
