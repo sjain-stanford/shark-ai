@@ -80,7 +80,9 @@ jobs:
         ref: 5ac6995d6f08c9db8486a0b851f7db3aab3cee42
 
     - name: Create cache directory
-      run: mkdir -p $HOME/.cache/fusilli/
+      run: |
+        mkdir -p $HOME/.cache/fusilli
+        chmod -R u+w $HOME/.cache/fusilli
 
     - name: Debug cache directory permissions
       run: |
