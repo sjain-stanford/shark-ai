@@ -1,6 +1,11 @@
-enable_language(HIP)  # enables HIP language for this dir and this dir only
+# Copyright 2025 Advanced Micro Devices, Inc.
+#
+# Licensed under the Apache License v2.0 with LLVM Exceptions.
+# See https://llvm.org/LICENSE.txt for license information.
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-include(Catch)
+
+enable_language(HIP)  # enables HIP language for this dir and this dir only
 
 set_source_files_properties(test_hip_buffer_import_api.cpp PROPERTIES LANGUAGE HIP)
 
