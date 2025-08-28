@@ -16,8 +16,8 @@ sharkfuser_find_program(filecheck "Please install filecheck (e.g., pip install f
 # Find iree-opt program
 sharkfuser_find_program(iree-opt "Please install iree-opt (e.g., pip install iree-base-compiler).")
 
-# Enable HIP tests if AMD GPU is detected and HIP is found
-if(EXISTS "/dev/kfd")
+# Enable HIP tests if AMD GPU is enabled (ensures GPU detected) and HIP is found
+if(SHARKFUSER_SYSTEMS_AMDGPU)
   set(HIP_PLATFORM "amd")
   find_package(HIP QUIET)
   if(HIP_FOUND)
@@ -26,8 +26,6 @@ if(EXISTS "/dev/kfd")
   else()
     message(STATUS "HIP not found: Skipping HIP tests")
   endif()
-else()
-  message(STATUS "No AMD GPU detected: Skipping HIP tests")
 endif()
 
 add_sharkfuser_test(

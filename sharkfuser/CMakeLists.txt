@@ -41,7 +41,7 @@ list(APPEND CMAKE_MODULE_PATH
   ${CMAKE_CURRENT_LIST_DIR}/build_tools/cmake/
 )
 include(CTestMacros)
-include(SharkfuserUtils)
+include(SharkFuserUtils)
 
 # Find IREE packages + tools
 # It is up to the consumer of Fusilli to determine how to bring the IREE dependencies in,
@@ -88,10 +88,23 @@ if(SHARKFUSER_DEBUG_BUILD OR SHARKFUSER_CODE_COVERAGE)
   set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Debug build" FORCE)
 endif()
 
-# Enable AMDGPU backend tests if AMD GPU is detected
-if(EXISTS "/dev/kfd")
-  message(STATUS "AMD GPU detected: Enabling GPU samples and tests")
-  add_definitions(-DFUSILLI_ENABLE_AMDGPU)
+# Option for AMDGPU backend
+option(SHARKFUSER_SYSTEMS_AMDGPU "Builds for AMD GPU systems" ON)
+message(STATUS "SharkFuser supported systems:")
+if(SHARKFUSER_SYSTEMS_AMDGPU)
+  message(STATUS "  - AMD GPU")
+endif()
+message(STATUS "  - Host")
+
+# Enable AMD GPU samples and tests if GPU is detected
+if(SHARKFUSER_SYSTEMS_AMDGPU)
+  # Check for Linux AMD GPU device node - `/dev/kfd`
+  if(EXISTS "/dev/kfd")
+    message(STATUS "AMD GPU detected: Enabling GPU samples and tests")
+    add_definitions(-DFUSILLI_ENABLE_AMDGPU)
+  else()
+    message(FATAL_ERROR "SHARKFUSER_SYSTEMS_AMDGPU is ON but `/dev/kfd` not found: No AMD GPU detected on this system.")
+  endif()
 endif()
 
 # Build samples
