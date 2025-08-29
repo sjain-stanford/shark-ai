@@ -117,8 +117,7 @@ public:
       sanitizedGraphName = "unnamed_graph";
     }
 
-    const char *homeDir = "/tmp";
-    // const char *homeDir = std::getenv("HOME");
+    const char *homeDir = std::getenv("HOME");
     return std::filesystem::path(homeDir) / ".cache" / "fusilli" /
            sanitizedGraphName / fileName;
   }
