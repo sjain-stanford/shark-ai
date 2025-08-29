@@ -82,7 +82,7 @@ jobs:
         ref: 6f8dc8c00963aaffc2e3064c7389d27d31a5925f
 
     - name: Set sharkfuser cache dir
-      run: export FUSILLI_CACHE_DIR=/tmp/
+      run: export FUSILLI_CACHE_DIR=/tmp
 
     - name: Build sharkfuser
       working-directory: ${{ env.SHARKFUSER_DIR }}
