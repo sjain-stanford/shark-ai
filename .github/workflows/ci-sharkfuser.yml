@@ -79,7 +79,13 @@ jobs:
       with:
         repository: sjain-stanford/docker
         path: docker
-        ref: 4d1b0c9a806073981b8dc6cac318c45ef1be7d93
+        ref: 6f8dc8c00963aaffc2e3064c7389d27d31a5925f
+
+    - name: Check host UID
+      run: id -u  # Usually 1001
+
+    - name: Give world write to cache dir
+      run: mkdir -p $HOME/.cache/fusilli && chmod -R 777 $HOME/.cache
 
     - name: Build sharkfuser
       working-directory: ${{ env.SHARKFUSER_DIR }}
@@ -98,7 +104,7 @@ jobs:
         ctest --test-dir build --output-on-failure --extra-verbose --timeout 30 && \
         tests/test_cache_empty.sh
 
-    - name: Code coverage sharkfuser
+    - name: Run code coverage
       if: ${{ matrix.name == 'cpu_gcc13_codecov' }}
       working-directory: ${{ env.SHARKFUSER_DIR }}
       run: |
