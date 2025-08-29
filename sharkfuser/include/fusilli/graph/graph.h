@@ -76,21 +76,21 @@ public:
 
   ErrorObject compile(const FusilliHandle &handle) {
     FUSILLI_LOG_LABEL_ENDL("INFO: Compiling Graph");
-
+    FUSILLI_RETURN_ERROR_IF(!isValidated_, ErrorCode::NotValidated,
+                            "Graph must be validated before being compiled");
     std::string generatedAsm = FUSILLI_TRY(emitAsm());
     std::string vmfbPath = FUSILLI_TRY(
         readOrGenerateCompiledArtifact(handle, generatedAsm, /*remove=*/true));
-
     return ok();
   }
 
   ErrorOr<std::string> emitAsm() {
+    FUSILLI_LOG_LABEL_ENDL("INFO: Emitting MLIR assembly for Graph");
     FUSILLI_RETURN_ERROR_IF(
         !isValidated_, ErrorCode::NotValidated,
         "Graph must be validated before emitting MLIR assembly");
-    FUSILLI_LOG_LABEL_ENDL("INFO: Emitting MLIR assembly for Graph");
     std::ostringstream oss;
-    emitAsmSubtree(oss);
+    FUSILLI_CHECK_ERROR(emitAsmSubtree(oss));
     FUSILLI_LOG_ENDL(oss.str());
     return oss.str();
   }
