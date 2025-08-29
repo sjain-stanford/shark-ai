@@ -56,6 +56,7 @@ class PerplexityIree:
         tensor_parallelism_size,
         pipeline_parallelims_size,
         attention_kernel,
+        matmul_kernel,
         block_seq_stride,
         activation_dtype,
         attention_dtype,
@@ -74,12 +75,12 @@ class PerplexityIree:
         self.bs = bs
         self.tensor_parallelism_size = tensor_parallelism_size
         self.attention_kernel = attention_kernel
+        self.matmul_kernel = matmul_kernel
         self.block_seq_stride = block_seq_stride
         self.activation_dtype = activation_dtype
         self.attention_dtype = attention_dtype
         self.kv_cache_dtype = kv_cache_dtype
         self.pipeline_parallelism_size = pipeline_parallelims_size
-        self.attention_kernel = attention_kernel
         self.use_attention_mask = use_attention_mask
         self.use_hf = use_hf
         self.weight_path_str = weight_path_str
@@ -147,6 +148,7 @@ class PerplexityIree:
             iree_hal_target_device=self.iree_hal_target_device,
             hip_device_id=self.iree_devices[0],
             attention_kernel=self.attention_kernel,
+            matmul_kernel=self.matmul_kernel,
             tensor_parallelism_size=self.tensor_parallelism_size,
             pipeline_parallelism_size=self.pipeline_parallelism_size,
             block_seq_stride=self.block_seq_stride,
@@ -183,9 +185,9 @@ class PerplexityIree:
             attention_dtype=self.attention_dtype,
             kv_cache_dtype=self.kv_cache_dtype,
             tensor_parallelism_size=self.tensor_parallelism_size,
-            pipeline_parallelism_size=self.pipeline_parallelism_size,
             block_seq_stride=self.block_seq_stride,
             attention_kernel=self.attention_kernel,
+            matmul_kernel=self.matmul_kernel,
             use_hf=self.use_hf,
             block_to_pipeline_map=block_to_pipeline,
             pipeline_to_device_map=pipeline_to_devices,
@@ -217,7 +219,7 @@ class PerplexityIree:
 
         token_batch, seq_lens_batch = pad_tokens(
             token_ids=token_batch.tolist(),
-            pad_to_multiple_of=self.generator.model.cache.pad_sequence_stride,
+            pad_to_multiple_of=self.generator.model.paged_attention.pad_sequence_stride,
         )
 
         logger.debug(f"{token_batch}")
@@ -423,7 +425,7 @@ class PerplexityIree:
         else:
             self.token_ids, self.seq_lens = self.generator.tokenizer.encode(
                 test_prompts,
-                pad_to_multiple_of=self.generator.model.cache.pad_sequence_stride,
+                pad_to_multiple_of=self.generator.model.paged_attention.pad_sequence_stride,
             )
 
             logger.debug(f" Prompts for Evaluation:")
@@ -492,6 +494,7 @@ def run_perplexity_iree(
         tensor_parallelism_size=tensor_parallelism_size,
         pipeline_parallelims_size=pipeline_parallelism_size,
         attention_kernel=args.attention_kernel,
+        matmul_kernel=args.matmul_kernel,
         block_seq_stride=args.block_seq_stride,
         use_attention_mask=args.use_attention_mask,
         activation_dtype=args.activation_dtype,
