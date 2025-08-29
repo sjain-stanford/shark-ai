@@ -59,7 +59,7 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
   ErrorOr<std::string> generatedAsm = graph->emitAsm();
   REQUIRE(isOk(generatedAsm));
 
-  ErrorOr<std::string> vmfbPath =
-      graph->readOrGenerateCompiledArtifact(**handle, *generatedAsm);
+  ErrorOr<std::string> vmfbPath = graph->readOrGenerateCompiledArtifact(
+      **handle, *generatedAsm, /*remove=*/true);
   REQUIRE(isOk(vmfbPath));
 }

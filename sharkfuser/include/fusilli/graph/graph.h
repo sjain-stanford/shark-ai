@@ -78,8 +78,8 @@ public:
     FUSILLI_LOG_LABEL_ENDL("INFO: Compiling Graph");
 
     std::string generatedAsm = FUSILLI_TRY(emitAsm());
-    std::string vmfbPath =
-        FUSILLI_TRY(readOrGenerateCompiledArtifact(handle, generatedAsm));
+    std::string vmfbPath = FUSILLI_TRY(
+        readOrGenerateCompiledArtifact(handle, generatedAsm, /*remove=*/true));
 
     return ok();
   }
@@ -135,9 +135,10 @@ public:
   //
   // `reCompiled` will be set to true if a value is passed and the cache was
   // (re)generated; this parameter is useful for testing.
-  ErrorOr<std::filesystem::path> readOrGenerateCompiledArtifact(
-      const FusilliHandle &handle, const std::string &generatedAsm,
-      bool remove = true, std::optional<bool> *reCompiled = nullptr) {
+  ErrorOr<std::filesystem::path>
+  readOrGenerateCompiledArtifact(const FusilliHandle &handle,
+                                 const std::string &generatedAsm, bool remove,
+                                 std::optional<bool> *reCompiled = nullptr) {
     // Check for cache hit.
     if (FUSILLI_TRY(validateCache(handle, generatedAsm))) {
       if (reCompiled) {
@@ -194,7 +195,7 @@ private:
         [&](const std::string &name) { cmdss << name; },
         // between_fn
         [&] { cmdss << " "; });
-    return cmdss.str();
+    return cmdss.str() + "\n";
   }
 
   // Create compiled artifacts from graph writing results to the cache. Set
