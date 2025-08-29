@@ -79,13 +79,12 @@ protected:
   // Recursively emit MLIR assembly for the node and its sub nodes
   // allowing for composite ops to expand into their own regions
   // containing sub ops.
-  ErrorObject emitAsmSubtree(std::ostringstream &oss) {
+  void emitAsmSubtree(std::ostringstream &oss) {
     oss << emitNodePreAsm();
     for (const auto &subNode : subNodes_) {
-      FUSILLI_CHECK_ERROR(subNode->emitAsmSubtree(oss));
+      subNode->emitAsmSubtree(oss);
     }
     oss << emitNodePostAsm();
-    return ok();
   }
 
   // Recursively check that names of nodes and their sub nodes

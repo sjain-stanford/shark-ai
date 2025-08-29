@@ -90,7 +90,7 @@ public:
         !isValidated_, ErrorCode::NotValidated,
         "Graph must be validated before emitting MLIR assembly");
     std::ostringstream oss;
-    FUSILLI_CHECK_ERROR(emitAsmSubtree(oss));
+    emitAsmSubtree(oss);
     FUSILLI_LOG_ENDL(oss.str());
     return oss.str();
   }
