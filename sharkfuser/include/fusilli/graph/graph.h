@@ -44,31 +44,27 @@ class Graph : public INode {
 public:
   Graph() : INode(Context{}) {}
 
+  // Validates the graph for correctness and infers missing properties
   ErrorObject validate() {
     FUSILLI_LOG_LABEL_ENDL("INFO: Validating Graph");
-
     FUSILLI_RETURN_ERROR_IF(getName().empty(), ErrorCode::AttributeNotSet,
                             "Graph name not set");
-
     // Validate nodes
     // This infers missing tensor properties such as dims,
     // stride, dtype based on context
     FUSILLI_CHECK_ERROR(validateSubtree());
-
     // Validate inputs
     // This has to happen after `validateSubtree` to infer any
     // missing properties on inputs first.
     for (const auto &input : fullGraphInputs_) {
       FUSILLI_CHECK_ERROR(input->validate());
     }
-
     // Validate outputs
     // This has to happen after `validateSubtree` to infer any
     // missing properties on outputs first.
     for (const auto &output : fullGraphOutputs_) {
       FUSILLI_CHECK_ERROR(output->validate());
     }
-
     FUSILLI_LOG_LABEL_ENDL("INFO: Graph validation completed successfully");
     isValidated_ = true;
     return ok();
@@ -81,32 +77,15 @@ public:
   // this `Graph` instance goes out of scope.
   ErrorObject compile(const FusilliHandle &handle, bool remove = false) {
     FUSILLI_LOG_LABEL_ENDL("INFO: Compiling Graph");
-
     FUSILLI_RETURN_ERROR_IF(!isValidated_, ErrorCode::NotValidated,
                             "Graph must be validated before being compiled");
-
     std::string generatedAsm = FUSILLI_TRY(emitAsm());
-
     std::string vmfbPath = FUSILLI_TRY(
         readOrGenerateCompiledArtifact(handle, generatedAsm, remove));
-
     return ok();
   }
 
-  ErrorOr<std::string> emitAsm() {
-    FUSILLI_LOG_LABEL_ENDL("INFO: Emitting MLIR assembly for Graph");
-
-    FUSILLI_RETURN_ERROR_IF(
-        !isValidated_, ErrorCode::NotValidated,
-        "Graph must be validated before emitting MLIR assembly");
-
-    std::ostringstream oss;
-    emitAsmSubtree(oss);
-    FUSILLI_LOG_ENDL(oss.str());
-
-    return oss.str();
-  }
-
+  // Getters and setters for graph context
   const std::string &getName() const override final {
     return context.getName();
   }
@@ -140,6 +119,21 @@ public:
                                         const std::shared_ptr<TensorAttr> &w,
                                         ConvFPropAttr &attributes);
 
+  // ASM emitter driver method.
+  //
+  // NOTE: This is public for now to aid testing and debuggability, however
+  // the intended user facing API is `Graph::compile()`.
+  ErrorOr<std::string> emitAsm() {
+    FUSILLI_LOG_LABEL_ENDL("INFO: Emitting MLIR assembly for Graph");
+    FUSILLI_RETURN_ERROR_IF(
+        !isValidated_, ErrorCode::NotValidated,
+        "Graph must be validated before emitting MLIR assembly");
+    std::ostringstream oss;
+    emitAsmSubtree(oss);
+    FUSILLI_LOG_ENDL(oss.str());
+    return oss.str();
+  }
+
   // Return compiled artifact. The first invocation will always generate
   // compiled artifact, subsequent invocations may return cached versions
   // assuming cache invalidation checks pass. Set `remove = true` to remove
@@ -147,24 +141,24 @@ public:
   //
   // `reCompiled` will be set to true if a value is passed and the cache was
   // (re)generated; this parameter is useful for testing.
+  //
+  // NOTE: This is public for now to aid testing and debuggability, however
+  // the intended user facing API is `Graph::compile()`.
   ErrorOr<std::filesystem::path>
   readOrGenerateCompiledArtifact(const FusilliHandle &handle,
                                  const std::string &generatedAsm, bool remove,
                                  std::optional<bool> *reCompiled = nullptr) {
     // Check for cache hit.
     if (FUSILLI_TRY(validateCache(handle, generatedAsm))) {
-      if (reCompiled) {
+      if (reCompiled)
         *reCompiled = false;
-      }
       return cache_->output.path;
     }
-
     // (Re)generate cache.
-    if (reCompiled) {
-      *reCompiled = true;
-    }
     cache_ =
         FUSILLI_TRY(generateCompiledArtifacts(handle, generatedAsm, remove));
+    if (reCompiled)
+      *reCompiled = true;
     return cache_->output.path;
   }
 
