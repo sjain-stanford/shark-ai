@@ -81,14 +81,12 @@ jobs:
         path: docker
         ref: 6f8dc8c00963aaffc2e3064c7389d27d31a5925f
 
-    - name: Set sharkfuser cache dir
-      run: export FUSILLI_CACHE_DIR=/tmp
-
     - name: Build sharkfuser
       working-directory: ${{ env.SHARKFUSER_DIR }}
       run: |
         ${{ env.DOCKER_DIR }}/exec_docker.sh \
-        bash -c "cmake -GNinja -S. -Bbuild \
+        bash -c "FUSILLI_CACHE_DIR=/tmp \
+                 cmake -GNinja -S. -Bbuild \
                     -DIREERuntime_DIR=/opt/iree/build/lib/cmake/IREE \
                     ${{ matrix.cmake-options }} && \
                  cmake --build build --target all"
