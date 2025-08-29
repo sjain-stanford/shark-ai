@@ -113,9 +113,8 @@ public:
     });
 
     // Ensure graphName has a value.
-    if (sanitizedGraphName.empty()) {
+    if (sanitizedGraphName.empty())
       sanitizedGraphName = "unnamed_graph";
-    }
 
     // Defaults to ${HOME}/.cache/fusilli but having it set via
     // ${FUSILLI_CACHE_DIR} to /tmp helps bypass permission issues
@@ -134,25 +133,19 @@ public:
     other.remove_ = false;
   }
   CacheFile &operator=(CacheFile &&other) noexcept {
-    if (this == &other) {
+    if (this == &other)
       return *this;
-    }
-
     // If ownership of the cached file is simply changing, we aren't creating a
     // dangling resource that might to be removed.
     bool samePath = path == other.path;
-
     // Remove current resource if needed
-    if (remove_ && !path.empty() && !samePath) {
+    if (remove_ && !path.empty() && !samePath)
       std::filesystem::remove(path);
-    }
-
     // Move from other
     path = std::move(other.path);
     remove_ = other.remove_;
     other.path.clear();
     other.remove_ = false;
-
     return *this;
   }
 
@@ -238,14 +231,12 @@ struct CleanupCacheDirectory {
 
   ~CleanupCacheDirectory() {
     // This likely indicates the instance in question has been moved from.
-    if (cacheDir.empty()) {
+    if (cacheDir.empty())
       return;
-    }
 
     if (std::filesystem::exists(cacheDir) &&
-        std::filesystem::is_empty(cacheDir)) {
+        std::filesystem::is_empty(cacheDir))
       std::filesystem::remove(cacheDir);
-    }
   }
 };
 

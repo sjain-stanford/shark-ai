@@ -260,6 +260,7 @@ private:
 
     // Check for cache miss if cache hasn't been generated.
     if (!cache_.has_value()) {
+      FUSILLI_LOG_ENDL("Cache not previously populated.");
       return ok(false);
     }
 

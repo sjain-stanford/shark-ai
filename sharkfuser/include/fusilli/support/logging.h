@@ -168,12 +168,11 @@ public:
   template <typename U>
     requires std::is_constructible_v<T, U>
   ErrorOr(ErrorOr<U> &&other) {
-    if (isOk(other)) {
+    if (isOk(other))
       storage_ = Storage(std::in_place_type<T>, std::move(*other));
-    } else {
+    else
       storage_ = Storage(std::in_place_type<ErrorObject>,
                          std::move(std::get<ErrorObject>(other.storage_)));
-    }
   }
 
   // Construct implicitly from ErrorObject to support returning `error(...)`
@@ -200,9 +199,8 @@ public:
 
   // Convert to error object.
   operator ErrorObject() const {
-    if (std::holds_alternative<T>(storage_)) {
+    if (std::holds_alternative<T>(storage_))
       return ok();
-    }
     return std::get<ErrorObject>(storage_);
   }
 
@@ -290,9 +288,8 @@ inline bool &isLoggingEnabled() {
   static bool logEnabled = []() -> bool {
     const char *envVal = std::getenv("FUSILLI_LOG_INFO");
     // Disabled when FUSILLI_LOG_INFO is not set
-    if (!envVal) {
+    if (!envVal)
       return false;
-    }
     std::string envValStr(envVal);
     // Disabled when FUSILLI_LOG_INFO == "" (empty string)
     // Disabled when FUSILLI_LOG_INFO == "0", any other value enables it
@@ -333,17 +330,15 @@ public:
 
   template <typename T>
   const ConditionalStreamer &operator<<(const T &t) const {
-    if (isLoggingEnabled()) {
+    if (isLoggingEnabled())
       stream_ << t;
-    }
     return *this;
   }
 
   const ConditionalStreamer &
   operator<<(std::ostream &(*spl)(std::ostream &)) const {
-    if (isLoggingEnabled()) {
+    if (isLoggingEnabled())
       stream_ << spl;
-    }
     return *this;
   }
 
