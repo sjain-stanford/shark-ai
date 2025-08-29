@@ -26,12 +26,13 @@
 
 namespace fusilli {
 
-// A RAII type for creating + destroying cache files in `$HOME/.cache/fusilli`.
+// A RAII type for creating + destroying cache files in
+// `${HOME}/.cache/fusilli`.
 //
 //  void example() {
 //    // `remove = true`
 //    {
-//      // Create $HOME/.cache/fusilli/example_graph/input
+//      // Create ${HOME}/.cache/fusilli/example_graph/input
 //      ErrorOr<CacheFile> cacheFile = CacheFile::create(
 //          /*graphName=*/"example_graph", /*filename=*/"input",
 //          /*remove=*/true);
@@ -65,7 +66,7 @@ public:
     FUSILLI_LOG_LABEL_ENDL("INFO: Creating Cache file");
     FUSILLI_LOG_ENDL(path);
 
-    // Create directory $HOME/.cache/fusilli/<graphName>
+    // Create directory ${HOME}/.cache/fusilli/<graphName>
     std::filesystem::path cacheDir = path.parent_path();
     std::error_code ec;
     std::filesystem::create_directories(cacheDir, ec);
@@ -73,7 +74,7 @@ public:
                             "Failed to create cache directory: " +
                                 cacheDir.string() + " - " + ec.message());
 
-    // Create file $HOME/.cache/fusilli/<graphName>/<fileName>
+    // Create file ${HOME}/.cache/fusilli/<graphName>/<fileName>
     std::ofstream file(path);
     FUSILLI_RETURN_ERROR_IF(!file.is_open(), ErrorCode::FileSystemFailure,
                             "Failed to create file: " + path.string());
@@ -99,7 +100,7 @@ public:
   // Utility method to build the path to cache file given `graphName` and
   // `fileName`.
   //
-  // Format: $HOME/.cache/fusilli/<sanitized version of graphName>/<fileName>
+  // Format: ${HOME}/.cache/fusilli/<sanitized version of graphName>/<fileName>
   static std::filesystem::path getPath(const std::string &graphName,
                                        const std::string &fileName) {
     // Ensure graphName is safe to use as a directory name, we assume fileName
@@ -117,6 +118,9 @@ public:
       sanitizedGraphName = "unnamed_graph";
     }
 
+    // Defaults to ${HOME}/.cache/fusilli but having it set via
+    // ${FUSILLI_CACHE_DIR} to /tmp helps bypass permission issues
+    // on the GitHub action runners
     const char *cacheDir = std::getenv("FUSILLI_CACHE_DIR")
                                ? std::getenv("FUSILLI_CACHE_DIR")
                                : std::getenv("HOME");
