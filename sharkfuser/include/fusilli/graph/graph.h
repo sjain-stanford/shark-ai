@@ -74,6 +74,16 @@ public:
     return ok();
   }
 
+  ErrorObject compile(const FusilliHandle &handle) {
+    FUSILLI_LOG_LABEL_ENDL("INFO: Compiling Graph");
+
+    std::string generatedAsm = FUSILLI_TRY(emitAsm());
+    std::string vmfbPath =
+        FUSILLI_TRY(readOrGenerateCompiledArtifact(handle, generatedAsm));
+
+    return ok();
+  }
+
   ErrorOr<std::string> emitAsm() {
     FUSILLI_RETURN_ERROR_IF(
         !isValidated_, ErrorCode::NotValidated,
@@ -133,7 +143,7 @@ public:
       if (reCompiled) {
         *reCompiled = false;
       }
-      return cache_->output.read();
+      return cache_->output.path;
     }
 
     // (Re)generate cache.

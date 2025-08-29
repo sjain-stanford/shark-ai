@@ -28,18 +28,16 @@ namespace fusilli {
 // Custom deleter for IREE runtime instance
 struct IreeRuntimeInstanceDeleter {
   void operator()(iree_runtime_instance_t *instance) const {
-    if (instance) {
+    if (instance)
       iree_runtime_instance_release(instance);
-    }
   }
 };
 
 // Custom deleter for IREE HAL device
 struct IreeHalDeviceDeleter {
   void operator()(iree_hal_device_t *device) const {
-    if (device) {
+    if (device)
       iree_hal_device_release(device);
-    }
   }
 };
 
