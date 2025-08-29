@@ -74,24 +74,36 @@ public:
     return ok();
   }
 
-  ErrorObject compile(const FusilliHandle &handle) {
+  // Compiles the graph using IREE compiler and sets up the IREE runtime
+  // session context for future g->execute calls.
+  //
+  // Set `remove = true` to remove compilation artifacts (cache files) when
+  // this `Graph` instance goes out of scope.
+  ErrorObject compile(const FusilliHandle &handle, bool remove = false) {
     FUSILLI_LOG_LABEL_ENDL("INFO: Compiling Graph");
+
     FUSILLI_RETURN_ERROR_IF(!isValidated_, ErrorCode::NotValidated,
                             "Graph must be validated before being compiled");
+
     std::string generatedAsm = FUSILLI_TRY(emitAsm());
+
     std::string vmfbPath = FUSILLI_TRY(
-        readOrGenerateCompiledArtifact(handle, generatedAsm, /*remove=*/true));
+        readOrGenerateCompiledArtifact(handle, generatedAsm, remove));
+
     return ok();
   }
 
   ErrorOr<std::string> emitAsm() {
     FUSILLI_LOG_LABEL_ENDL("INFO: Emitting MLIR assembly for Graph");
+
     FUSILLI_RETURN_ERROR_IF(
         !isValidated_, ErrorCode::NotValidated,
         "Graph must be validated before emitting MLIR assembly");
+
     std::ostringstream oss;
     emitAsmSubtree(oss);
     FUSILLI_LOG_ENDL(oss.str());
+
     return oss.str();
   }
 
@@ -160,7 +172,7 @@ private:
   // This is set after `validate()` is run at least once successfully.
   bool isValidated_ = false;
 
-  // Cache set by `generateCompiledArtifacts()`.
+  // Cache set by `readOrGenerateCompiledArtifact()`.
   //
   // Note: new instances should always re-generate cache even if the results
   // could be read from the file system. Old results may have been generated
