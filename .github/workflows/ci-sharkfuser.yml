@@ -81,11 +81,8 @@ jobs:
         path: docker
         ref: 6f8dc8c00963aaffc2e3064c7389d27d31a5925f
 
-    - name: Check host UID
-      run: id -u  # Usually 1001
-
-    - name: Give world write to cache dir
-      run: mkdir -p $HOME/.cache/fusilli && chmod -R 777 $HOME/.cache
+    - name: Set sharkfuser cache dir
+      run: export FUSILLI_CACHE_DIR=/tmp/
 
     - name: Build sharkfuser
       working-directory: ${{ env.SHARKFUSER_DIR }}
