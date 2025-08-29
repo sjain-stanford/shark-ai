@@ -80,8 +80,8 @@ public:
     FUSILLI_RETURN_ERROR_IF(!isValidated_, ErrorCode::NotValidated,
                             "Graph must be validated before being compiled");
     std::string generatedAsm = FUSILLI_TRY(emitAsm());
-    std::string vmfbPath = FUSILLI_TRY(
-        readOrGenerateCompiledArtifact(handle, generatedAsm, remove));
+    std::string vmfbPath =
+        FUSILLI_TRY(getCompiledArtifact(handle, generatedAsm, remove));
     return ok();
   }
 
@@ -145,9 +145,9 @@ public:
   // NOTE: This is public for now to aid testing and debuggability, however
   // the intended user facing API is `Graph::compile()`.
   ErrorOr<std::filesystem::path>
-  readOrGenerateCompiledArtifact(const FusilliHandle &handle,
-                                 const std::string &generatedAsm, bool remove,
-                                 std::optional<bool> *reCompiled = nullptr) {
+  getCompiledArtifact(const FusilliHandle &handle,
+                      const std::string &generatedAsm, bool remove,
+                      std::optional<bool> *reCompiled = nullptr) {
     // Check for cache hit.
     if (FUSILLI_TRY(validateCache(handle, generatedAsm))) {
       if (reCompiled)
@@ -156,7 +156,7 @@ public:
     }
     // (Re)generate cache.
     cache_ =
-        FUSILLI_TRY(generateCompiledArtifacts(handle, generatedAsm, remove));
+        FUSILLI_TRY(generateCompiledArtifact(handle, generatedAsm, remove));
     if (reCompiled)
       *reCompiled = true;
     return cache_->output.path;
@@ -166,7 +166,7 @@ private:
   // This is set after `validate()` is run at least once successfully.
   bool isValidated_ = false;
 
-  // Cache set by `readOrGenerateCompiledArtifact()`.
+  // Cache set by `getCompiledArtifact()`.
   //
   // Note: new instances should always re-generate cache even if the results
   // could be read from the file system. Old results may have been generated
@@ -208,8 +208,8 @@ private:
   // `remove = true` to remove cache files when returned `CachedAssets` lifetime
   // ends.
   ErrorOr<CachedAssets>
-  generateCompiledArtifacts(const FusilliHandle &handle,
-                            const std::string &generatedAsm, bool remove) {
+  generateCompiledArtifact(const FusilliHandle &handle,
+                           const std::string &generatedAsm, bool remove) {
     FUSILLI_LOG_LABEL_ENDL("INFO: Generating compiled artifacts");
 
     // Create cache.
