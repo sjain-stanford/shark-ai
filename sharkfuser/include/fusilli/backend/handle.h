@@ -54,7 +54,7 @@ public:
     FUSILLI_LOG_LABEL_ENDL("INFO: Creating handle for backend: " << backend);
 
     // Create shared IREE runtime instance (thread-safe)
-    auto instance = getSharedInstance();
+    auto instance = createSharedInstance();
     FUSILLI_RETURN_ERROR_IF(isError(instance), ErrorCode::RuntimeFailure,
                             "Failed to create shared IREE runtime instance");
 
@@ -62,7 +62,7 @@ public:
     auto handle = FusilliHandle(backend, std::move(*instance));
 
     // Lazy create handle-specific IREE HAL device
-    auto device = handle.getPerHandleDevice();
+    auto device = handle.createPerHandleDevice();
     FUSILLI_RETURN_ERROR_IF(isError(device), ErrorCode::RuntimeFailure,
                             "Failed to create per-handle IREE HAL device");
     handle.device_ = std::move(*device);
@@ -85,11 +85,11 @@ private:
   // Create static singleton IREE runtime instance shared across handles/threads
   // TODO(sjain-stanford): Consider moving to `std::call_once` to avoid
   // paying the cost of acquiring/releasing the mutex lock on every call
-  // to `FusilliHandle::getSharedInstance()`. The only minor issue is the
+  // to `FusilliHandle::createSharedInstance()`. The only minor issue is the
   // lambda for `call_once` expects a void callable but in our case we
   // return ErrorObject inside `FUSILLI_CHECK_ERROR` so it might need
   // some restructuring to properly capture/propagate the error state.
-  static ErrorOr<IreeRuntimeInstanceSharedPtrType> getSharedInstance() {
+  static ErrorOr<IreeRuntimeInstanceSharedPtrType> createSharedInstance() {
     // Mutex for thread-safe initialization of sharedInstance
     static std::mutex instanceMutex;
     static IreeRuntimeInstanceSharedPtrType sharedInstance;
@@ -112,7 +112,7 @@ private:
   }
 
   // Create IREE HAL device for this handle
-  ErrorOr<IreeHalDeviceUniquePtrType> getPerHandleDevice() const {
+  ErrorOr<IreeHalDeviceUniquePtrType> createPerHandleDevice() const {
     iree_hal_device_t *rawDevice = nullptr;
     FUSILLI_CHECK_ERROR(iree_runtime_instance_try_create_default_device(
         instance_.get(), iree_make_cstring_view(halDriver.at(backend_)),
