@@ -85,10 +85,10 @@ jobs:
       working-directory: ${{ env.SHARKFUSER_DIR }}
       run: |
         ${{ env.DOCKER_DIR }}/exec_docker.sh \
-        bash -c "FUSILLI_CACHE_DIR=/tmp \
+        bash -c "export FUSILLI_CACHE_DIR=/tmp && \
                  cmake -GNinja -S. -Bbuild \
-                    -DIREERuntime_DIR=/opt/iree/build/lib/cmake/IREE \
-                    ${{ matrix.cmake-options }} && \
+                   -DIREERuntime_DIR=/opt/iree/build/lib/cmake/IREE \
+                   ${{ matrix.cmake-options }} && \
                  cmake --build build --target all"
 
     - name: Test sharkfuser
@@ -96,15 +96,17 @@ jobs:
       working-directory: ${{ env.SHARKFUSER_DIR }}
       run: |
         ${{ env.DOCKER_DIR }}/exec_docker.sh \
-        ctest --test-dir build --output-on-failure --extra-verbose --timeout 30 && \
-        tests/test_cache_empty.sh
+        bash -c "export FUSILLI_CACHE_DIR=/tmp && \
+                 ctest --test-dir build --output-on-failure --extra-verbose --timeout 30 && \
+                 tests/test_cache_empty.sh"
 
     - name: Run code coverage
       if: ${{ matrix.name == 'cpu_gcc13_codecov' }}
       working-directory: ${{ env.SHARKFUSER_DIR }}
       run: |
         ${{ env.DOCKER_DIR }}/exec_docker.sh \
-        bash -c "ctest --test-dir build -T test -T coverage --timeout 30 && \
+        bash -c "export FUSILLI_CACHE_DIR=/tmp && \
+                 ctest --test-dir build -T test -T coverage --timeout 30 && \
                  lcov --capture --directory build --output-file build/coverage.info && \
                  lcov --remove build/coverage.info '/usr/*' --output-file build/coverage.info && \
                  genhtml build/coverage.info --output-directory coverage_report"
