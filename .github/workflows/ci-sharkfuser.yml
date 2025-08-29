@@ -74,21 +74,12 @@ jobs:
     - name: Checkout sharkfuser
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-
     - name: Checkout docker
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         repository: sjain-stanford/docker
         path: docker
         ref: 4d1b0c9a806073981b8dc6cac318c45ef1be7d93
-
-    - name: Debug in container
-      if: ${{ matrix.name == 'gfx942_clang18_debug' }}
-      run: |
-        ls -ld $HOME/.cache
-        ls -ld $HOME/.cache/fusilli
-        ls -ld $HOME/.cache/fusilli/test_graph || echo "test_graph does not exist"
-        whoami
 
     - name: Build sharkfuser
       working-directory: ${{ env.SHARKFUSER_DIR }}
