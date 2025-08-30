@@ -93,14 +93,18 @@ public:
     FUSILLI_LOG_LABEL_ENDL("INFO: Compiling Graph");
     FUSILLI_RETURN_ERROR_IF(!isValidated_, ErrorCode::NotValidated,
                             "Graph must be validated before being compiled");
+
+    // Generate MLIR assembly for this graph
     std::string generatedAsm = FUSILLI_TRY(emitAsm());
+
+    // Compile using IREE compiler or reuse cached artifact
     std::string vmfbPath =
         FUSILLI_TRY(getCompiledArtifact(handle, generatedAsm, remove));
-    // Lazy create graph-specific IREE runtime session if not already available
-    if (session_ == nullptr)
-      session_ = FUSILLI_TRY(createPerGraphSession(handle));
-    // Load compiled artifact into session
-    FUSILLI_CHECK_ERROR(loadModuleInSession(vmfbPath));
+
+    // Create per-graph IREE runtime session (if not already available)
+    // and load the compiled artifact into it
+    FUSILLI_CHECK_ERROR(initializeSession(handle, vmfbPath));
+
     return ok();
   }
 
@@ -189,26 +193,28 @@ public:
   }
 
 private:
-  // Create IREE runtime session for this graph
-  ErrorOr<IreeRuntimeSessionUniquePtrType>
-  createPerGraphSession(const FusilliHandle &handle) const {
-    FUSILLI_LOG_LABEL_ENDL("INFO: Creating per-graph IREE runtime session");
-    iree_runtime_session_options_t opts;
-    iree_runtime_session_options_initialize(&opts);
-    iree_runtime_session_t *rawSession = nullptr;
+  // Create IREE runtime session for this graph if not available already
+  ErrorObject initializeSession(const FusilliHandle &handle,
+                                const std::string &vmfbPath) {
+    // Skip to loading if session is already created
+    if (session_ == nullptr) {
+      FUSILLI_LOG_LABEL_ENDL("INFO: Creating per-graph IREE runtime session");
+      iree_runtime_session_options_t opts;
+      iree_runtime_session_options_initialize(&opts);
+      iree_runtime_session_t *rawSession = nullptr;
 
-    FUSILLI_CHECK_ERROR(iree_runtime_session_create_with_device(
-        handle.getInstance(), &opts, handle.getDevice(),
-        iree_runtime_instance_host_allocator(handle.getInstance()),
-        &rawSession));
+      FUSILLI_CHECK_ERROR(iree_runtime_session_create_with_device(
+          handle.getInstance(), &opts, handle.getDevice(),
+          iree_runtime_instance_host_allocator(handle.getInstance()),
+          &rawSession));
 
-    return ok(IreeRuntimeSessionUniquePtrType(rawSession));
-  }
+      session_ = IreeRuntimeSessionUniquePtrType(rawSession);
+    }
 
-  ErrorObject loadModuleInSession(const std::string &vmfbPath) {
     FUSILLI_LOG_LABEL_ENDL("INFO: Loading module in IREE runtime session");
     FUSILLI_CHECK_ERROR(iree_runtime_session_append_bytecode_module_from_file(
         session_.get(), vmfbPath.c_str()));
+
     return ok();
   }
 

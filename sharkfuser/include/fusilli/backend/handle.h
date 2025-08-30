@@ -54,7 +54,7 @@ public:
     // initializing the device yet)
     auto handle = FusilliHandle(backend, FUSILLI_TRY(createSharedInstance()));
     // Lazy create handle-specific IREE HAL device and populate the handle
-    handle.device_ = FUSILLI_TRY(handle.createPerHandleDevice());
+    FUSILLI_CHECK_ERROR(handle.createPerHandleDevice());
     return ok(std::move(handle));
   }
 
@@ -101,7 +101,7 @@ private:
   }
 
   // Create IREE HAL device for this handle
-  ErrorOr<IreeHalDeviceUniquePtrType> createPerHandleDevice() const {
+  ErrorObject createPerHandleDevice() {
     FUSILLI_LOG_LABEL_ENDL("INFO: Creating per-handle IREE HAL device");
     iree_hal_device_t *rawDevice = nullptr;
 
@@ -109,7 +109,8 @@ private:
         instance_.get(), iree_make_cstring_view(halDriver.at(backend_)),
         &rawDevice));
 
-    return ok(IreeHalDeviceUniquePtrType(rawDevice));
+    device_ = IreeHalDeviceUniquePtrType(rawDevice);
+    return ok();
   }
 
   // Private constructor (use factory `create` method for handle creation)
