@@ -97,13 +97,8 @@ public:
     std::string vmfbPath =
         FUSILLI_TRY(getCompiledArtifact(handle, generatedAsm, remove));
     // Lazy create graph-specific IREE runtime session if not already available
-    if (session_ == nullptr) {
-      auto session = createPerGraphSession(handle);
-      FUSILLI_RETURN_ERROR_IF(
-          isError(session), ErrorCode::RuntimeFailure,
-          "Failed to create per-graph IREE runtime session");
-      session_ = std::move(*session);
-    }
+    if (session_ == nullptr)
+      session_ = FUSILLI_TRY(createPerGraphSession(handle));
     // Load compiled artifact into session
     FUSILLI_CHECK_ERROR(iree_runtime_session_append_bytecode_module_from_file(
         session_.get(), vmfbPath.c_str()));

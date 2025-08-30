@@ -49,21 +49,12 @@ class FusilliHandle {
 public:
   static ErrorOr<FusilliHandle> create(Backend backend) {
     FUSILLI_LOG_LABEL_ENDL("INFO: Creating handle for backend: " << backend);
-
-    // Create shared IREE runtime instance (thread-safe)
-    auto instance = createSharedInstance();
-    FUSILLI_RETURN_ERROR_IF(isError(instance), ErrorCode::RuntimeFailure,
-                            "Failed to create shared IREE runtime instance");
-
-    // Create a handle obj without initializing the device yet
-    auto handle = FusilliHandle(backend, std::move(*instance));
-
-    // Lazy create handle-specific IREE HAL device
-    auto device = handle.createPerHandleDevice();
-    FUSILLI_RETURN_ERROR_IF(isError(device), ErrorCode::RuntimeFailure,
-                            "Failed to create per-handle IREE HAL device");
-    handle.device_ = std::move(*device);
-
+    // Create a shared IREE runtime instance (thread-safe) and use it
+    // along with the backend to construct a handle (without
+    // initializing the device yet)
+    auto handle = FusilliHandle(backend, FUSILLI_TRY(createSharedInstance()));
+    // Lazy create handle-specific IREE HAL device and populate the handle
+    handle.device_ = FUSILLI_TRY(handle.createPerHandleDevice());
     return ok(std::move(handle));
   }
 
