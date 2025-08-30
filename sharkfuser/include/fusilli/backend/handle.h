@@ -84,6 +84,7 @@ private:
 
     std::lock_guard<std::mutex> lock(instanceMutex);
     if (sharedInstance == nullptr) {
+      FUSILLI_LOG_LABEL_ENDL("INFO: Creating shared IREE runtime instance");
       iree_runtime_instance_options_t opts;
       iree_runtime_instance_options_initialize(&opts);
       iree_runtime_instance_options_use_all_available_drivers(&opts);
@@ -101,6 +102,7 @@ private:
 
   // Create IREE HAL device for this handle
   ErrorOr<IreeHalDeviceUniquePtrType> createPerHandleDevice() const {
+    FUSILLI_LOG_LABEL_ENDL("INFO: Creating per-handle IREE HAL device");
     iree_hal_device_t *rawDevice = nullptr;
 
     FUSILLI_CHECK_ERROR(iree_runtime_instance_try_create_default_device(

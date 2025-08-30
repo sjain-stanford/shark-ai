@@ -100,9 +100,7 @@ public:
     if (session_ == nullptr)
       session_ = FUSILLI_TRY(createPerGraphSession(handle));
     // Load compiled artifact into session
-    FUSILLI_CHECK_ERROR(iree_runtime_session_append_bytecode_module_from_file(
-        session_.get(), vmfbPath.c_str()));
-
+    FUSILLI_CHECK_ERROR(loadModuleInSession(vmfbPath));
     return ok();
   }
 
@@ -194,6 +192,7 @@ private:
   // Create IREE runtime session for this graph
   ErrorOr<IreeRuntimeSessionUniquePtrType>
   createPerGraphSession(const FusilliHandle &handle) const {
+    FUSILLI_LOG_LABEL_ENDL("INFO: Creating per-graph IREE runtime session");
     iree_runtime_session_options_t opts;
     iree_runtime_session_options_initialize(&opts);
     iree_runtime_session_t *rawSession = nullptr;
@@ -204,6 +203,12 @@ private:
         &rawSession));
 
     return ok(IreeRuntimeSessionUniquePtrType(rawSession));
+  }
+
+  ErrorObject loadModuleInSession(const std::string &vmfbPath) {
+    FUSILLI_CHECK_ERROR(iree_runtime_session_append_bytecode_module_from_file(
+        session_.get(), vmfbPath.c_str()));
+    return ok();
   }
 
   std::string buildCompileCommand(const FusilliHandle &handle,
