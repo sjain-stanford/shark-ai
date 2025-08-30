@@ -17,7 +17,6 @@
 #include "fusilli/backend/backend.h"
 #include "fusilli/support/logging.h"
 
-#include <iree/hal/api.h>
 #include <iree/runtime/api.h>
 
 #include <memory>

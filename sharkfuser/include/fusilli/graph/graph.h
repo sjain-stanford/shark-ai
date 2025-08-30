@@ -24,6 +24,8 @@
 #include "fusilli/support/extras.h"
 #include "fusilli/support/logging.h"
 
+#include <iree/runtime/api.h>
+
 #include <cassert>
 #include <cstdlib>
 #include <filesystem>
@@ -39,6 +41,17 @@
 #define IREE_COMPILE_COMMAND_FILENAME "iree-compile-command.txt"
 
 namespace fusilli {
+
+// Custom deleter for IREE runtime session
+struct IreeRuntimeSessionDeleter {
+  void operator()(iree_runtime_session_t *session) const {
+    if (session)
+      iree_runtime_session_release(session);
+  }
+};
+
+using IreeRuntimeInstanceUniquePtrType =
+    std::unique_ptr<iree_runtime_session_t, IreeRuntimeSessionDeleter>;
 
 class Graph : public INode {
 public:
@@ -85,11 +98,19 @@ public:
     return ok();
   }
 
+  // Delete copy constructors, keep default move constructor and destructor
+  Graph(const Graph &) = delete;
+  Graph &operator=(const Graph &) = delete;
+  Graph(Graph &&) = default;
+  Graph &operator=(Graph &&) = default;
+  ~Graph() = default;
+
   // Getters and setters for graph context
   const std::string &getName() const override final {
     return context.getName();
   }
   Type getType() const override final { return Type::Composite; }
+  iree_runtime_session_t *getSession() const { return session_.get(); }
 
   Graph &setName(const std::string &name) {
     context.setName(name);
@@ -165,6 +186,8 @@ public:
 private:
   // This is set after `validate()` is run at least once successfully.
   bool isValidated_ = false;
+
+  IreeRuntimeInstanceUniquePtrType session_;
 
   // Cache set by `getCompiledArtifact()`.
   //
