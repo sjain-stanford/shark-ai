@@ -206,6 +206,7 @@ private:
   }
 
   ErrorObject loadModuleInSession(const std::string &vmfbPath) {
+    FUSILLI_LOG_LABEL_ENDL("INFO: Loading module in IREE runtime session");
     FUSILLI_CHECK_ERROR(iree_runtime_session_append_bytecode_module_from_file(
         session_.get(), vmfbPath.c_str()));
     return ok();
