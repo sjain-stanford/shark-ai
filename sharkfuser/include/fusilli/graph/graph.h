@@ -29,6 +29,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <filesystem>
+#include <iree/runtime/session.h>
 #include <memory>
 #include <optional>
 #include <set>
@@ -50,7 +51,7 @@ struct IreeRuntimeSessionDeleter {
   }
 };
 
-using IreeRuntimeInstanceUniquePtrType =
+using IreeRuntimeSessionUniquePtrType =
     std::unique_ptr<iree_runtime_session_t, IreeRuntimeSessionDeleter>;
 
 class Graph : public INode {
@@ -95,6 +96,18 @@ public:
     std::string generatedAsm = FUSILLI_TRY(emitAsm());
     std::string vmfbPath =
         FUSILLI_TRY(getCompiledArtifact(handle, generatedAsm, remove));
+    // Lazy create graph-specific IREE runtime session if not already available
+    if (session_ == nullptr) {
+      auto session = createPerGraphSession(handle);
+      FUSILLI_RETURN_ERROR_IF(
+          isError(session), ErrorCode::RuntimeFailure,
+          "Failed to create per-graph IREE runtime session");
+      session_ = std::move(*session);
+    }
+    // Load compiled artifact into session
+    FUSILLI_CHECK_ERROR(iree_runtime_session_append_bytecode_module_from_file(
+        session_.get(), vmfbPath.c_str()));
+
     return ok();
   }
 
@@ -110,7 +123,6 @@ public:
     return context.getName();
   }
   Type getType() const override final { return Type::Composite; }
-  iree_runtime_session_t *getSession() const { return session_.get(); }
 
   Graph &setName(const std::string &name) {
     context.setName(name);
@@ -184,30 +196,20 @@ public:
   }
 
 private:
-  // This is set after `validate()` is run at least once successfully.
-  bool isValidated_ = false;
+  // Create IREE runtime session for this graph
+  ErrorOr<IreeRuntimeSessionUniquePtrType>
+  createPerGraphSession(const FusilliHandle &handle) const {
+    iree_runtime_session_options_t opts;
+    iree_runtime_session_options_initialize(&opts);
+    iree_runtime_session_t *rawSession = nullptr;
 
-  IreeRuntimeInstanceUniquePtrType session_;
+    FUSILLI_CHECK_ERROR(iree_runtime_session_create_with_device(
+        handle.getInstance(), &opts, handle.getDevice(),
+        iree_runtime_instance_host_allocator(handle.getInstance()),
+        &rawSession));
 
-  // Cache set by `getCompiledArtifact()`.
-  //
-  // Note: new instances should always re-generate cache even if the results
-  // could be read from the file system. Old results may have been generated
-  // with a different version of IREE, it would not be safe to use them.
-  std::optional<CachedAssets> cache_ = std::nullopt;
-
-  // This is safe for post-insertion updates of TensorAttr (e.g. setting name
-  // or other properties) since it uses the pointer value itself for hashing.
-  std::unordered_set<std::shared_ptr<TensorAttr>> fullGraphInputs_;
-  std::unordered_set<std::shared_ptr<TensorAttr>> fullGraphOutputs_;
-
-  // These are sorted by the TensorAttr name, so post-insertion modification is
-  // UB (undefined behavior). These are to be populated after the graph is fully
-  // constructed and validated, and no further updates are expected.
-  std::set<std::shared_ptr<TensorAttr>, TensorAttrSortByName>
-      fullGraphInputsSorted_;
-  std::set<std::shared_ptr<TensorAttr>, TensorAttrSortByName>
-      fullGraphOutputsSorted_;
+    return ok(IreeRuntimeSessionUniquePtrType(rawSession));
+  }
 
   std::string buildCompileCommand(const FusilliHandle &handle,
                                   const CacheFile &input,
@@ -388,6 +390,33 @@ private:
   std::string getOperandNamesAndTypesAsm() const override final;
   std::string getResultNamesAsm() const override final;
   std::string getResultTypesAsm() const override final;
+
+  // This is set after `validate()` is run at least once successfully.
+  bool isValidated_ = false;
+
+  // IREE runtime session lifetime managed by the `Graph` object
+  // (deleted when the `Graph` object goes out of scope)
+  IreeRuntimeSessionUniquePtrType session_;
+
+  // Cache set by `getCompiledArtifact()`.
+  //
+  // Note: new instances should always re-generate cache even if the results
+  // could be read from the file system. Old results may have been generated
+  // with a different version of IREE, it would not be safe to use them.
+  std::optional<CachedAssets> cache_ = std::nullopt;
+
+  // This is safe for post-insertion updates of TensorAttr (e.g. setting name
+  // or other properties) since it uses the pointer value itself for hashing.
+  std::unordered_set<std::shared_ptr<TensorAttr>> fullGraphInputs_;
+  std::unordered_set<std::shared_ptr<TensorAttr>> fullGraphOutputs_;
+
+  // These are sorted by the TensorAttr name, so post-insertion modification is
+  // UB (undefined behavior). These are to be populated after the graph is fully
+  // constructed and validated, and no further updates are expected.
+  std::set<std::shared_ptr<TensorAttr>, TensorAttrSortByName>
+      fullGraphInputsSorted_;
+  std::set<std::shared_ptr<TensorAttr>, TensorAttrSortByName>
+      fullGraphOutputsSorted_;
 };
 
 // Given a TensorAttr, create a shared pointer and add it to the graph's

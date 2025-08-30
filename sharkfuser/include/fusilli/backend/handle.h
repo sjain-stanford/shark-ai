@@ -96,8 +96,8 @@ private:
       iree_runtime_instance_options_t opts;
       iree_runtime_instance_options_initialize(&opts);
       iree_runtime_instance_options_use_all_available_drivers(&opts);
-
       iree_runtime_instance_t *rawInstance = nullptr;
+
       FUSILLI_CHECK_ERROR(iree_runtime_instance_create(
           &opts, iree_allocator_system(), &rawInstance));
 
@@ -111,9 +111,11 @@ private:
   // Create IREE HAL device for this handle
   ErrorOr<IreeHalDeviceUniquePtrType> createPerHandleDevice() const {
     iree_hal_device_t *rawDevice = nullptr;
+
     FUSILLI_CHECK_ERROR(iree_runtime_instance_try_create_default_device(
         instance_.get(), iree_make_cstring_view(halDriver.at(backend_)),
         &rawDevice));
+
     return ok(IreeHalDeviceUniquePtrType(rawDevice));
   }
 
