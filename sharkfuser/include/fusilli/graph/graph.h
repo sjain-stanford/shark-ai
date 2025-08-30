@@ -29,7 +29,6 @@
 #include <cassert>
 #include <cstdlib>
 #include <filesystem>
-#include <iree/runtime/session.h>
 #include <memory>
 #include <optional>
 #include <set>
