@@ -94,6 +94,23 @@ public:
     return ok();
   }
 
+  ErrorObject execute(
+      std::unordered_map<std::shared_ptr<TensorAttr>, iree_hal_buffer_view_t>
+          &variantPack) const {
+    FUSILLI_LOG_LABEL_ENDL("INFO: Executing Graph");
+    FUSILLI_RETURN_ERROR_IF(session_ == nullptr, ErrorCode::NotCompiled,
+                            "Graph must be compiled before being executed");
+
+    iree_runtime_call_t call;
+    FUSILLI_CHECK_ERROR(iree_runtime_call_initialize_by_name(
+        session_.get(), iree_make_cstring_view("module.main"), &call));
+
+    // TODO
+
+    iree_runtime_call_deinitialize(&call);
+    return ok();
+  }
+
   // Delete copy constructors, keep default move constructor and destructor
   Graph(const Graph &) = delete;
   Graph &operator=(const Graph &) = delete;
