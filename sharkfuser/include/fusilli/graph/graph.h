@@ -94,6 +94,7 @@ public:
     return ok();
   }
 
+  // Executes the graph using IREE runtime.
   ErrorObject execute(
       std::unordered_map<std::shared_ptr<TensorAttr>, iree_hal_buffer_view_t>
           &variantPack) const {
