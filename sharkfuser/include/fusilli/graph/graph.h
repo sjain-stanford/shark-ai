@@ -25,6 +25,8 @@
 #include "fusilli/support/extras.h"
 #include "fusilli/support/logging.h"
 
+#include <iree/runtime/api.h>
+
 #include <cassert>
 #include <cstdlib>
 #include <filesystem>
@@ -45,22 +47,22 @@ class Graph : public INode {
 public:
   Graph() : INode(Context{}) {}
 
-  // Validates the graph for correctness and infers missing properties
+  // Validates the graph for correctness and infers missing properties.
   ErrorObject validate() {
     FUSILLI_LOG_LABEL_ENDL("INFO: Validating Graph");
     FUSILLI_RETURN_ERROR_IF(getName().empty(), ErrorCode::AttributeNotSet,
                             "Graph name not set");
-    // Validate nodes
+    // Validate nodes.
     // This infers missing tensor properties such as dims,
     // stride, dtype based on context
     FUSILLI_CHECK_ERROR(validateSubtree());
-    // Validate inputs
+    // Validate inputs.
     // This has to happen after `validateSubtree` to infer any
     // missing properties on inputs first.
     for (const auto &input : fullGraphInputs_) {
       FUSILLI_CHECK_ERROR(input->validate());
     }
-    // Validate outputs
+    // Validate outputs.
     // This has to happen after `validateSubtree` to infer any
     // missing properties on outputs first.
     for (const auto &output : fullGraphOutputs_) {
@@ -81,22 +83,27 @@ public:
     FUSILLI_RETURN_ERROR_IF(!isValidated_, ErrorCode::NotValidated,
                             "Graph must be validated before being compiled");
 
-    // Generate MLIR assembly for this graph
+    // Generate MLIR assembly for this graph.
     std::string generatedAsm = FUSILLI_TRY(emitAsm());
 
-    // Compile using IREE compiler or reuse cached artifact
+    // Compile using IREE compiler or reuse cached artifact.
     std::string vmfbPath =
         FUSILLI_TRY(getCompiledArtifact(handle, generatedAsm, remove));
 
-    // Create per-graph IREE runtime session and load the compiled artifact
+    // Create per-graph IREE runtime session and load the compiled artifact.
     FUSILLI_CHECK_ERROR(createPerGraphSession(handle, vmfbPath));
 
     return ok();
   }
 
-  // Executes the graph using IREE runtime.
+  // Executes the graph using IREE runtime. Requires a `variantPack` which
+  // is a map from `TensorAttr` to `iree_hal_buffer_view_t *`.
+  //
+  // TODO: Memoize `iree_runtime_call_t` initialization and populate buffer
+  // views at setup to avoid paying the penalty for every `Graph::execute`
+  // invocation.
   ErrorObject execute(
-      std::unordered_map<std::shared_ptr<TensorAttr>, iree_hal_buffer_view_t>
+      std::unordered_map<std::shared_ptr<TensorAttr>, iree_hal_buffer_view_t *>
           &variantPack) const {
     FUSILLI_LOG_LABEL_ENDL("INFO: Executing Graph");
     FUSILLI_RETURN_ERROR_IF(session_ == nullptr, ErrorCode::NotCompiled,
@@ -106,20 +113,43 @@ public:
     FUSILLI_CHECK_ERROR(iree_runtime_call_initialize_by_name(
         session_.get(), iree_make_cstring_view("module.main"), &call));
 
-    // TODO
+    // Populate input buffers.
+    for (const auto &input : fullGraphInputsSorted_) {
+      auto it = variantPack.find(input);
+      FUSILLI_RETURN_ERROR_IF(it == variantPack.end(),
+                              ErrorCode::TensorNotFound,
+                              "Input tensor missing from variantPack");
+      iree_hal_buffer_view_t *buffer = it->second;
+      FUSILLI_CHECK_ERROR(
+          iree_runtime_call_inputs_push_back_buffer_view(&call, buffer));
+    }
+
+    // Synchronously perform the call.
+    FUSILLI_CHECK_ERROR(iree_runtime_call_invoke(&call, /*flags=*/0));
+
+    // Extract output buffers.
+    for (const auto &output : fullGraphOutputsSorted_) {
+      auto it = variantPack.find(output);
+      FUSILLI_RETURN_ERROR_IF(it == variantPack.end(),
+                              ErrorCode::TensorNotFound,
+                              "Output tensor missing from variantPack");
+      iree_hal_buffer_view_t *buffer = it->second;
+      FUSILLI_CHECK_ERROR(
+          iree_runtime_call_outputs_pop_front_buffer_view(&call, &buffer));
+    }
 
     iree_runtime_call_deinitialize(&call);
     return ok();
   }
 
-  // Delete copy constructors, keep default move constructor and destructor
+  // Delete copy constructors, keep default move constructor and destructor.
   Graph(const Graph &) = delete;
   Graph &operator=(const Graph &) = delete;
   Graph(Graph &&) noexcept = default;
   Graph &operator=(Graph &&) noexcept = default;
   ~Graph() = default;
 
-  // Getters and setters for graph context
+  // Getters and setters for graph context.
   const std::string &getName() const override final {
     return context.getName();
   }
@@ -374,7 +404,7 @@ private:
 
   ErrorObject postValidateNode() const override final { return ok(); }
 
-  // MLIR assembly emitter helper methods
+  // MLIR assembly emitter helper methods.
   std::string emitNodePreAsm() const override final;
   std::string emitNodePostAsm() const override final;
   std::string getOperandNamesAndTypesAsm() const override final;
@@ -385,7 +415,7 @@ private:
   bool isValidated_ = false;
 
   // IREE runtime session lifetime managed by the `Graph` object
-  // (deleted when the `Graph` object goes out of scope)
+  // (deleted when the `Graph` object goes out of scope).
   IreeRuntimeSessionUniquePtrType session_;
 
   // Cache set by `getCompiledArtifact()`.
@@ -425,7 +455,7 @@ inline std::shared_ptr<TensorAttr>
 Graph::convFProp(const std::shared_ptr<TensorAttr> &x,
                  const std::shared_ptr<TensorAttr> &w,
                  ConvFPropAttr &convAttr) {
-  // Populate names when not set
+  // Populate names when not set.
   if (convAttr.getName().empty())
     convAttr.setName("conv_fprop_" + std::to_string(subNodes_.size()));
   if (x->getName().empty())
@@ -436,14 +466,14 @@ Graph::convFProp(const std::shared_ptr<TensorAttr> &x,
   FUSILLI_LOG_LABEL_ENDL("INFO: Adding ConvFPropNode '" << convAttr.getName()
                                                         << "' to Graph");
 
-  // Set inputs
+  // Set inputs.
   convAttr.setX(x).setW(w);
 
-  // Set outputs
+  // Set outputs.
   auto y = outputTensor(convAttr.getName() + "_Y");
   convAttr.setY(y);
 
-  // Create node and add to Graph's subNodes_
+  // Create node and add to Graph's subNodes_.
   subNodes_.emplace_back(
       std::make_unique<ConvFPropNode>(std::move(convAttr), context));
 

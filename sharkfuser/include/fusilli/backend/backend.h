@@ -95,6 +95,14 @@ struct IreeRuntimeSessionDeleter {
   }
 };
 
+// Custom deleter for IREE HAL buffer view
+struct IreeHalBufferViewDeleter {
+  void operator()(iree_hal_buffer_view_t *bufferView) const {
+    if (bufferView)
+      iree_hal_buffer_view_release(bufferView);
+  }
+};
+
 // Aliases for IREE runtime types with custom deleters
 using IreeRuntimeInstanceSharedPtrType =
     std::shared_ptr<iree_runtime_instance_t>;
@@ -102,6 +110,8 @@ using IreeHalDeviceUniquePtrType =
     std::unique_ptr<iree_hal_device_t, IreeHalDeviceDeleter>;
 using IreeRuntimeSessionUniquePtrType =
     std::unique_ptr<iree_runtime_session_t, IreeRuntimeSessionDeleter>;
+using IreeHalBufferViewUniquePtrType =
+    std::unique_ptr<iree_hal_buffer_view_t, IreeHalBufferViewDeleter>;
 
 } // namespace fusilli
 

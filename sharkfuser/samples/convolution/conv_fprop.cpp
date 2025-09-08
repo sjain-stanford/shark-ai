@@ -65,7 +65,11 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
 
   auto [graph, X, W, Y] = build_new_graph(**handle);
 
-  Buffer<half> xT(n * c * h * w);
-  Buffer<half> wT(k * c * r * s);
-  Buffer<half> yT(n * k * h * w);
+  std::vector<half> xData(n * c * h * w, half(1.0f));
+  std::vector<half> wData(k * c * r * s, half(1.0f));
+  std::vector<half> yData(n * k * h * w, half(1.0f));
+
+  Buffer<half> xT(/*shape=*/{n, c, h, w}, /*data=*/std::move(xData));
+  Buffer<half> wT(/*shape=*/{k, c, r, s}, /*data=*/std::move(wData));
+  Buffer<half> yT(/*shape=*/{n, k, h, w}, /*data=*/std::move(yData));
 }
