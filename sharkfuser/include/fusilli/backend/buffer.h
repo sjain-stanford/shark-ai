@@ -14,14 +14,15 @@
 #ifndef FUSILLI_BACKEND_BUFFER_H
 #define FUSILLI_BACKEND_BUFFER_H
 
-#include "fusilli/attributes/types.h"
-#include "fusilli/support/logging.h"
-
 #include <iree/runtime/api.h>
+
+#include <cstdint>
 
 namespace fusilli {
 
-template <typename DataType> struct Buffer {};
+template <typename DataType> struct Buffer {
+  int64_t numElements = 0;
+};
 
 } // namespace fusilli
 

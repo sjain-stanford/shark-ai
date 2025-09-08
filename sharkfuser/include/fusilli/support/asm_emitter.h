@@ -36,6 +36,7 @@
 
 #include <cassert>
 #include <cstddef>
+#include <cstdint>
 #include <format>
 #include <sstream>
 #include <string>

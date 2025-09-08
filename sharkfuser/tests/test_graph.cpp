@@ -9,6 +9,7 @@
 #include "utils.h"
 
 #include <catch2/catch_test_macros.hpp>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <optional>

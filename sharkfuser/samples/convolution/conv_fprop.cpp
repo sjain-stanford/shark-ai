@@ -7,6 +7,7 @@
 #include <fusilli.h>
 
 #include <catch2/catch_test_macros.hpp>
+#include <cstdint>
 #include <memory>
 #include <optional>
 
@@ -15,7 +16,7 @@ using namespace fusilli;
 TEST_CASE("Convolution fprop", "[conv][graph]") {
   int64_t n = 16, c = 128, h = 64, w = 64, k = 256, r = 1, s = 1;
 
-  auto build_new_graph = [=](const FusilliHandle& handle) {
+  auto build_new_graph = [=](const FusilliHandle &handle) {
     auto graph = std::make_shared<Graph>();
     graph->setName("fprop_sample");
     graph->setIODataType(DataType::Half).setComputeDataType(DataType::Float);
@@ -64,4 +65,7 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
 
   auto [graph, X, W, Y] = build_new_graph(**handle);
 
+  Buffer<half> xT(n * c * h * w);
+  Buffer<half> wT(k * c * r * s);
+  Buffer<half> yT(n * k * h * w);
 }
