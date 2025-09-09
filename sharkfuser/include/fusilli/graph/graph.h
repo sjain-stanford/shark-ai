@@ -103,7 +103,7 @@ public:
   // views at setup to avoid paying the penalty for every `Graph::execute`
   // invocation.
   ErrorObject execute(
-      std::unordered_map<std::shared_ptr<TensorAttr>, iree_hal_buffer_view_t **>
+      std::unordered_map<std::shared_ptr<TensorAttr>, iree_hal_buffer_view_t *&>
           &variantPack) const {
     FUSILLI_LOG_LABEL_ENDL("INFO: Executing Graph");
     FUSILLI_RETURN_ERROR_IF(session_ == nullptr, ErrorCode::NotCompiled,
@@ -119,9 +119,8 @@ public:
       FUSILLI_RETURN_ERROR_IF(it == variantPack.end(),
                               ErrorCode::TensorNotFound,
                               "Input tensor missing from variantPack");
-      iree_hal_buffer_view_t *buffer = *(it->second);
       FUSILLI_CHECK_ERROR(
-          iree_runtime_call_inputs_push_back_buffer_view(&call, buffer));
+          iree_runtime_call_inputs_push_back_buffer_view(&call, it->second));
     }
 
     // Synchronously perform the call.
@@ -133,9 +132,8 @@ public:
       FUSILLI_RETURN_ERROR_IF(it == variantPack.end(),
                               ErrorCode::TensorNotFound,
                               "Output tensor missing from variantPack");
-      iree_hal_buffer_view_t **buffer = it->second;
-      FUSILLI_CHECK_ERROR(
-          iree_runtime_call_outputs_pop_front_buffer_view(&call, buffer));
+      FUSILLI_CHECK_ERROR(iree_runtime_call_outputs_pop_front_buffer_view(
+          &call, &(it->second)));
     }
 
     iree_runtime_call_deinitialize(&call);

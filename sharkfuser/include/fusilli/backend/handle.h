@@ -70,7 +70,7 @@ public:
   }
 
   template <typename T>
-  ErrorObject allocateBuffer(iree_hal_buffer_view_t **bufferView,
+  ErrorObject allocateBuffer(iree_hal_buffer_view_t *&bufferView,
                              const std::vector<int64_t> &bufferShape,
                              const std::vector<T> &bufferData) {
     FUSILLI_LOG_LABEL_ENDL("INFO: Allocating device buffer");
@@ -103,7 +103,7 @@ public:
         iree_make_const_byte_span(bufferData.data(),
                                   bufferData.size() * sizeof(T)),
         // Buffer view + storage are returned and owned by the caller:
-        bufferView));
+        &bufferView));
 
     return ok();
   }

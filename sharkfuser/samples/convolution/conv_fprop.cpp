@@ -65,30 +65,28 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
 
   auto [graph, X, W, Y] = build_new_graph(**handle);
 
-  std::vector<half> xData(n * c * h * w, half(1.0f));
-  std::vector<half> wData(k * c * r * s, half(1.0f));
-
   iree_hal_buffer_view_t *xB = nullptr;
-  auto xT = (**handle).allocateBuffer(&xB, /*shape=*/{n, c, h, w},
+  std::vector<half> xData(n * c * h * w, half(1.0f));
+  auto xT = (**handle).allocateBuffer(xB, /*shape=*/{n, c, h, w},
                                       /*data=*/std::move(xData));
   REQUIRE(isOk(xT));
   REQUIRE(xB != nullptr);
 
   iree_hal_buffer_view_t *wB = nullptr;
-  auto wT = (**handle).allocateBuffer(&wB, /*shape=*/{k, c, r, s},
+  std::vector<half> wData(k * c * r * s, half(1.0f));
+  auto wT = (**handle).allocateBuffer(wB, /*shape=*/{k, c, r, s},
                                       /*data=*/std::move(wData));
-
   REQUIRE(isOk(wT));
   REQUIRE(wB != nullptr);
 
   iree_hal_buffer_view_t *yB = nullptr;
   REQUIRE(yB == nullptr);
 
-  std::unordered_map<std::shared_ptr<TensorAttr>, iree_hal_buffer_view_t **>
+  std::unordered_map<std::shared_ptr<TensorAttr>, iree_hal_buffer_view_t *&>
       variantPack = {
-          {X, &xB},
-          {W, &wB},
-          {Y, &yB},
+          {X, xB},
+          {W, wB},
+          {Y, yB},
       };
 
   REQUIRE(isOk(graph->execute(variantPack)));
