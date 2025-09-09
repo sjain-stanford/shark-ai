@@ -100,12 +100,6 @@ public:
     return ok();
   }
 
-  // Returns a raw pointer to the underlying IREE HAL device.
-  // WARNING: The returned raw pointer is not safe to store since
-  // its lifetime is tied to the `FusilliHandle` object and only
-  // valid as long as this handle exists.
-  iree_hal_device_t *getDevice() const { return device_.get(); }
-
   // Delete copy constructors, keep default move constructor and destructor
   FusilliHandle(const FusilliHandle &) = delete;
   FusilliHandle &operator=(const FusilliHandle &) = delete;
@@ -135,7 +129,7 @@ private:
   // WARNING: The returned raw pointer is not safe to store since
   // its lifetime is tied to the `FusilliHandle` object and only
   // valid as long as this handle exists.
-  // iree_hal_device_t *getDevice() const { return device_.get(); }
+  iree_hal_device_t *getDevice() const { return device_.get(); }
 
   // Returns a raw pointer to the underlying IREE runtime instance.
   // WARNING: The returned raw pointer is not safe to store since

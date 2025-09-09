@@ -23,14 +23,7 @@ namespace fusilli {
 
 class Buffer {
 public:
-  Buffer() {
-    // Create a new IREE HAL buffer view.
-    iree_hal_buffer_view_t *bufferView = nullptr;
-
-    // Wrap the raw buffer_view ptr with a unique_ptr and custom deleter
-    // for lifetime management.
-    bufferView_ = IreeHalBufferViewUniquePtrType(bufferView);
-  }
+  Buffer() = default;
 
   // Returns a raw pointer to the underlying IREE HAL buffer view.
   // WARNING: The returned raw pointer is not safe to store since
@@ -46,6 +39,9 @@ public:
   ~Buffer() = default;
 
 private:
+  explicit Buffer(IreeHalBufferViewUniquePtrType bufferView)
+      : bufferView_(std::move(bufferView)) {}
+
   IreeHalBufferViewUniquePtrType bufferView_;
 };
 
