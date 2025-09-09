@@ -61,14 +61,6 @@ public:
     return ok(std::move(handle));
   }
 
-  ErrorOr<Buffer> getBuffer() {
-    FUSILLI_LOG_LABEL_ENDL("INFO: Creating new buffer");
-
-    Buffer buffer = Buffer();
-
-    return ok(std::move(buffer));
-  }
-
   template <typename T>
   ErrorObject allocateBuffer(iree_hal_buffer_view_t *&bufferView,
                              const std::vector<int64_t> &bufferShape,

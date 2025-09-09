@@ -80,7 +80,25 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
   REQUIRE(wB != nullptr);
 
   iree_hal_buffer_view_t *yB = nullptr;
-  REQUIRE(yB == nullptr);
+  std::vector<half> yData(n * k * h * w, half(1.0f));
+  auto yT = (**handle).allocateBuffer(yB, /*shape=*/{n, k, h, w},
+                                      /*data=*/std::move(yData));
+  // REQUIRE(yB == nullptr);
+
+  {
+    // Copy results back from device (this also works for CPUs).
+    iree_hal_buffer_t *buffer = iree_hal_buffer_view_buffer(yB);
+    iree_device_size_t byte_length = iree_hal_buffer_view_byte_length(yB);
+    std::vector<half> hostData(byte_length / sizeof(half));
+    REQUIRE(isOk(iree_hal_device_transfer_d2h(
+        (**handle).getDevice(), buffer, 0, hostData.data(), byte_length,
+        IREE_HAL_TRANSFER_BUFFER_FLAG_DEFAULT, iree_infinite_timeout())));
+
+    // Check the results.
+    for (auto v : hostData) {
+      REQUIRE(v == half(1.0f));
+    }
+  }
 
   std::unordered_map<std::shared_ptr<TensorAttr>, iree_hal_buffer_view_t *&>
       variantPack = {

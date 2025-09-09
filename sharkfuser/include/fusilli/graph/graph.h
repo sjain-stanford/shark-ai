@@ -113,6 +113,9 @@ public:
     FUSILLI_CHECK_ERROR(iree_runtime_call_initialize_by_name(
         session_.get(), iree_make_cstring_view("module.main"), &call));
 
+    // Reset call input/output lists.
+    iree_runtime_call_reset(&call);
+
     // Populate input buffers.
     for (const auto &input : fullGraphInputsSorted_) {
       auto it = variantPack.find(input);
