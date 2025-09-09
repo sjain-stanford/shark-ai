@@ -7,29 +7,29 @@
 //===----------------------------------------------------------------------===//
 //
 // This file contains the code to create and manage a Fusilli buffer
-// which is an RAII wrapper around IREE HAL buffer for proper initialization,
-// cleanup and lifetime management.
+// which is an RAII wrapper around IREE HAL buffer view for proper
+// initialization, cleanup and lifetime management.
 //
 //===----------------------------------------------------------------------===//
 
 #ifndef FUSILLI_BACKEND_BUFFER_H
 #define FUSILLI_BACKEND_BUFFER_H
 
-#include "fusilli/attributes/types.h"
 #include "fusilli/backend/backend.h"
-#include "fusilli/support/logging.h"
 
 #include <iree/runtime/api.h>
 
-#include <array>
-#include <cstdint>
-
 namespace fusilli {
 
-template <typename DataType> class Buffer {
+template <typename T> class Buffer {
 public:
-  Buffer(const std::vector<int64_t> &shape, const std::vector<DataType> &data) {
+  Buffer() {
+    // Create a new IREE HAL buffer view.
+    iree_hal_buffer_view_t *bufferView = nullptr;
 
+    // Wrap the raw buffer_view ptr with a unique_ptr and custom deleter
+    // for lifetime management.
+    bufferView_ = IreeHalBufferViewUniquePtrType(bufferView);
   }
 
   // Delete copy constructors, keep default move constructor and destructor
@@ -39,15 +39,15 @@ public:
   Buffer &operator=(Buffer &&) noexcept = default;
   ~Buffer() = default;
 
-  // Allow Graph objects to access private Buffer methods
+  // Allow FusilliHandle objects to access private Buffer methods
   // namely `getBufferView()`.
-  friend class Graph;
+  friend class FusilliHandle;
 
 private:
-  // Returns a raw pointer to the underlying IREE runtime instance.
+  // Returns a raw pointer to the underlying IREE HAL buffer view.
   // WARNING: The returned raw pointer is not safe to store since
-  // its lifetime is tied to the `FusilliHandle` objects and
-  // only valid as long as at least one handle exists.
+  // its lifetime is tied to the `Buffer` object and only valid
+  // as long as this buffer exists.
   iree_hal_buffer_view_t *getBufferView() const { return bufferView_.get(); }
 
   IreeHalBufferViewUniquePtrType bufferView_;
