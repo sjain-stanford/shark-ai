@@ -103,7 +103,7 @@ public:
   // views at setup to avoid paying the penalty for every `Graph::execute`
   // invocation.
   ErrorObject execute(
-      std::unordered_map<std::shared_ptr<TensorAttr>, iree_hal_buffer_view_t *&>
+      std::unordered_map<std::shared_ptr<TensorAttr>, iree_hal_buffer_view_t *>
           &variantPack) const {
     FUSILLI_LOG_LABEL_ENDL("INFO: Executing Graph");
     FUSILLI_RETURN_ERROR_IF(session_ == nullptr, ErrorCode::NotCompiled,
@@ -112,9 +112,6 @@ public:
     iree_runtime_call_t call;
     FUSILLI_CHECK_ERROR(iree_runtime_call_initialize_by_name(
         session_.get(), iree_make_cstring_view("module.main"), &call));
-
-    // Reset call input/output lists.
-    iree_runtime_call_reset(&call);
 
     // Populate input buffers.
     for (const auto &input : fullGraphInputsSorted_) {

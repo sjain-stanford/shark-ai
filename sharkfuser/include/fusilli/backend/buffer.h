@@ -16,6 +16,8 @@
 #define FUSILLI_BACKEND_BUFFER_H
 
 #include "fusilli/backend/backend.h"
+#include "fusilli/backend/handle.h"
+#include "fusilli/support/logging.h"
 
 #include <iree/runtime/api.h>
 
@@ -23,13 +25,64 @@ namespace fusilli {
 
 class Buffer {
 public:
-  Buffer() = default;
+  // Factory: Imports an existing view and retains ownership
+  static ErrorOr<Buffer> import(iree_hal_buffer_view_t *externalBufferView) {
+    FUSILLI_LOG_LABEL_ENDL("INFO: Importing pre-allocated device buffer");
+    FUSILLI_RETURN_ERROR_IF(externalBufferView == nullptr,
+                            ErrorCode::RuntimeFailure,
+                            "External buffer view is NULL");
+
+    iree_hal_buffer_view_retain(externalBufferView);
+    return ok(Buffer(IreeHalBufferViewUniquePtrType(externalBufferView)));
+  }
+
+  // Factory: Allocates a new buffer view and takes ownership
+  template <typename T>
+  static ErrorOr<Buffer> allocate(const FusilliHandle &handle,
+                                  const std::vector<int64_t> &bufferShape,
+                                  const std::vector<T> &bufferData) {
+    FUSILLI_LOG_LABEL_ENDL("INFO: Allocating new device buffer");
+
+    std::vector<iree_hal_dim_t> bufferShapeCast(bufferShape.begin(),
+                                                bufferShape.end());
+    iree_hal_buffer_view_t *rawBufferView = nullptr;
+
+    FUSILLI_CHECK_ERROR(iree_hal_buffer_view_allocate_buffer_copy(
+        // IREE HAL device and allocator:
+        handle.getDevice(), iree_hal_device_allocator(handle.getDevice()),
+        // Shape rank and dimensions:
+        bufferShapeCast.size(), bufferShapeCast.data(),
+        // Element type:
+        // TODO: Configure based on T
+        IREE_HAL_ELEMENT_TYPE_FLOAT_16,
+        // Encoding type:
+        IREE_HAL_ENCODING_TYPE_DENSE_ROW_MAJOR,
+        (iree_hal_buffer_params_t){
+            // Intended usage of this buffer (transfers, dispatches, etc):
+            .usage = IREE_HAL_BUFFER_USAGE_DEFAULT,
+            // Access to allow to this memory:
+            .access = IREE_HAL_MEMORY_ACCESS_ALL,
+            // Where to allocate (host or device):
+            .type = IREE_HAL_MEMORY_TYPE_DEVICE_LOCAL,
+        },
+        // The actual heap buffer to wrap or clone and its allocator:
+        iree_make_const_byte_span(bufferData.data(),
+                                  bufferData.size() * sizeof(T)),
+        // Buffer view + storage are returned and owned by the caller:
+        &rawBufferView));
+
+    return ok(Buffer(IreeHalBufferViewUniquePtrType(rawBufferView)));
+  }
 
   // Returns a raw pointer to the underlying IREE HAL buffer view.
   // WARNING: The returned raw pointer is not safe to store since
   // its lifetime is tied to the `Buffer` object and only valid
   // as long as this buffer exists.
   iree_hal_buffer_view_t *getBufferView() const { return bufferView_.get(); }
+
+  // Automatic (implicit) conversion operator for Buffer ->
+  // iree_hal_buffer_view_t*
+  operator iree_hal_buffer_view_t *() const { return getBufferView(); }
 
   // Delete copy constructors, keep default move constructor and destructor
   Buffer(const Buffer &) = delete;
@@ -48,53 +101,3 @@ private:
 } // namespace fusilli
 
 #endif // FUSILLI_BACKEND_BUFFER_H
-
-/*
-class Buffer {
- public:
-  // Type alias for unique_ptr with the custom deleter
-  using BufferViewPtr = std::unique_ptr<iree_hal_buffer_view_t, BufferViewDeleter>;
-
-  Buffer() = default;
-
-  // Factory: Allocates a new buffer view and takes ownership
-  static Buffer Allocate(...same args...) {
-    iree_hal_buffer_view_t* raw_ptr = nullptr;
-    iree_status_t status = iree_hal_buffer_view_allocate_buffer_copy(
-        ...args..., &raw_ptr);
-    if (!iree_status_is_ok(status)) {
-      throw std::runtime_error("Failed to allocate buffer view.");
-    }
-    return Buffer(BufferViewPtr(raw_ptr));
-  }
-
-  // Factory: Imports an existing view (retains + wraps)
-  static Buffer Import(iree_hal_buffer_view_t* external_ptr) {
-    if (!external_ptr) {
-      throw std::invalid_argument("Cannot import null buffer view.");
-    }
-    iree_hal_buffer_view_retain(external_ptr);
-    return Buffer(BufferViewPtr(external_ptr));
-  }
-
-  // Move constructor, move assignment: defaulted
-  Buffer(Buffer&&) noexcept = default;
-  Buffer& operator=(Buffer&&) noexcept = default;
-
-  // No copy
-  Buffer(const Buffer&) = delete;
-  Buffer& operator=(const Buffer&) = delete;
-
-  // Accessor
-  iree_hal_buffer_view_t* get() const { return buffer_view_.get(); }
-  operator iree_hal_buffer_view_t*() const { return get(); }
-
-  bool is_valid() const { return buffer_view_ != nullptr; }
-
- private:
-  explicit Buffer(BufferViewPtr ptr) : buffer_view_(std::move(ptr)) {}
-
-  BufferViewPtr buffer_view_;
-};
-
-*/

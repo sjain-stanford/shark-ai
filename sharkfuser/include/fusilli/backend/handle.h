@@ -17,10 +17,8 @@
 #define FUSILLI_BACKEND_HANDLE_H
 
 #include "fusilli/backend/backend.h"
-#include "fusilli/backend/buffer.h"
 #include "fusilli/support/logging.h"
 
-#include <iree/hal/buffer_view.h>
 #include <iree/runtime/api.h>
 
 namespace fusilli {
@@ -61,45 +59,6 @@ public:
     return ok(std::move(handle));
   }
 
-  template <typename T>
-  ErrorObject allocateBuffer(iree_hal_buffer_view_t *&bufferView,
-                             const std::vector<int64_t> &bufferShape,
-                             const std::vector<T> &bufferData) {
-    FUSILLI_LOG_LABEL_ENDL("INFO: Allocating device buffer");
-
-    std::vector<iree_hal_dim_t> bufferShapeCast(bufferShape.begin(),
-                                                bufferShape.end());
-
-    iree_hal_allocator_t *device_allocator =
-        iree_hal_device_allocator(device_.get());
-
-    FUSILLI_CHECK_ERROR(iree_hal_buffer_view_allocate_buffer_copy(
-        // IREE HAL device and allocator:
-        device_.get(), iree_hal_device_allocator(device_.get()),
-        // Shape rank and dimensions:
-        bufferShapeCast.size(), bufferShapeCast.data(),
-        // Element type:
-        // TODO: Configure based on T
-        IREE_HAL_ELEMENT_TYPE_FLOAT_16,
-        // Encoding type:
-        IREE_HAL_ENCODING_TYPE_DENSE_ROW_MAJOR,
-        (iree_hal_buffer_params_t){
-            // Intended usage of this buffer (transfers, dispatches, etc):
-            .usage = IREE_HAL_BUFFER_USAGE_DEFAULT,
-            // Access to allow to this memory:
-            .access = IREE_HAL_MEMORY_ACCESS_ALL,
-            // Where to allocate (host or device):
-            .type = IREE_HAL_MEMORY_TYPE_DEVICE_LOCAL,
-        },
-        // The actual heap buffer to wrap or clone and its allocator:
-        iree_make_const_byte_span(bufferData.data(),
-                                  bufferData.size() * sizeof(T)),
-        // Buffer view + storage are returned and owned by the caller:
-        &bufferView));
-
-    return ok();
-  }
-
   // Delete copy constructors, keep default move constructor and destructor
   FusilliHandle(const FusilliHandle &) = delete;
   FusilliHandle &operator=(const FusilliHandle &) = delete;
@@ -107,9 +66,10 @@ public:
   FusilliHandle &operator=(FusilliHandle &&) noexcept = default;
   ~FusilliHandle() = default;
 
-  // Allow Graph objects to access private FusilliHandle methods
+  // Allow Graph and Buffer objects to access private FusilliHandle methods
   // namely `getDevice()` and `getInstance()`.
   friend class Graph;
+  friend class Buffer;
 
 private:
   // Creates static singleton IREE runtime instance shared across
