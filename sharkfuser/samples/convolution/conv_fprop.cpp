@@ -19,7 +19,7 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
   auto build_new_graph = [=](const FusilliHandle &handle) {
     auto graph = std::make_shared<Graph>();
     graph->setName("fprop_sample");
-    graph->setIODataType(DataType::Float).setComputeDataType(DataType::Float);
+    graph->setIODataType(DataType::Half).setComputeDataType(DataType::Float);
 
     auto X = graph->tensor(TensorAttr()
                                .setName("image")
@@ -45,7 +45,7 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
 
     REQUIRE(isOk(graph->validate()));
 
-    REQUIRE(isOk(graph->compile(handle, /*remove=*/true)));
+    REQUIRE(isOk(graph->compile(handle, /*remove=*/false)));
 
     return std::make_tuple(graph, X, W, Y);
   };
@@ -65,10 +65,8 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
 
   auto [graph, X, W, Y] = build_new_graph(**handle);
 
-  // TODO: Switch to half
-  std::vector<float> xData(n * c * h * w, 1.0f);
-  std::vector<float> wData(k * c * r * s, 1.0f);
-  // std::vector<float> yData(n * k * h * w, 1.0f);
+  std::vector<half> xData(n * c * h * w, half(1.0f));
+  std::vector<half> wData(k * c * r * s, half(1.0f));
 
   iree_hal_buffer_view_t *xB = nullptr;
   auto xT = (**handle).allocateBuffer(&xB, /*shape=*/{n, c, h, w},
@@ -86,12 +84,26 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
   iree_hal_buffer_view_t *yB = nullptr;
   REQUIRE(yB == nullptr);
 
-  std::unordered_map<std::shared_ptr<TensorAttr>, iree_hal_buffer_view_t *>
+  std::unordered_map<std::shared_ptr<TensorAttr>, iree_hal_buffer_view_t **>
       variantPack = {
-          {X, xB},
-          {W, wB},
-          {Y, yB},
+          {X, &xB},
+          {W, &wB},
+          {Y, &yB},
       };
 
   REQUIRE(isOk(graph->execute(variantPack)));
+  REQUIRE(yB != nullptr);
+
+  // Copy results back from device (this also works for CPUs).
+  iree_hal_buffer_t *buffer = iree_hal_buffer_view_buffer(yB);
+  iree_device_size_t byte_length = iree_hal_buffer_view_byte_length(yB);
+  std::vector<half> hostData(byte_length / sizeof(half));
+  REQUIRE(isOk(iree_hal_device_transfer_d2h(
+      (**handle).getDevice(), buffer, 0, hostData.data(), byte_length,
+      IREE_HAL_TRANSFER_BUFFER_FLAG_DEFAULT, iree_infinite_timeout())));
+
+  // Check the results.
+  for (auto v : hostData) {
+    REQUIRE(v == half(128.0f));
+  }
 }
