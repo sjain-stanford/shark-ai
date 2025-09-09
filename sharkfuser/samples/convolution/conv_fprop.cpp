@@ -19,7 +19,7 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
   auto build_new_graph = [=](const FusilliHandle &handle) {
     auto graph = std::make_shared<Graph>();
     graph->setName("fprop_sample");
-    graph->setIODataType(DataType::Half).setComputeDataType(DataType::Float);
+    graph->setIODataType(DataType::Float).setComputeDataType(DataType::Float);
 
     auto X = graph->tensor(TensorAttr()
                                .setName("image")
@@ -65,19 +65,33 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
 
   auto [graph, X, W, Y] = build_new_graph(**handle);
 
-  std::vector<half> xData(n * c * h * w, half(1.0f));
-  std::vector<half> wData(k * c * r * s, half(1.0f));
-  std::vector<half> yData(n * k * h * w, half(1.0f));
+  // TODO: Switch to half
+  std::vector<float> xData(n * c * h * w, 1.0f);
+  std::vector<float> wData(k * c * r * s, 1.0f);
+  // std::vector<float> yData(n * k * h * w, 1.0f);
 
-  auto xT = (**handle).allocateBuffer(/*shape=*/{n, c, h, w},
+  iree_hal_buffer_view_t *xB = nullptr;
+  auto xT = (**handle).allocateBuffer(&xB, /*shape=*/{n, c, h, w},
                                       /*data=*/std::move(xData));
   REQUIRE(isOk(xT));
+  REQUIRE(xB != nullptr);
 
-  auto wT = (**handle).allocateBuffer(/*shape=*/{k, c, r, s},
+  iree_hal_buffer_view_t *wB = nullptr;
+  auto wT = (**handle).allocateBuffer(&wB, /*shape=*/{k, c, r, s},
                                       /*data=*/std::move(wData));
-  REQUIRE(isOk(wT));
 
-  auto yT = (**handle).allocateBuffer(/*shape=*/{n, k, h, w},
-                                      /*data=*/std::move(yData));
-  REQUIRE(isOk(yT));
+  REQUIRE(isOk(wT));
+  REQUIRE(wB != nullptr);
+
+  iree_hal_buffer_view_t *yB = nullptr;
+  REQUIRE(yB == nullptr);
+
+  std::unordered_map<std::shared_ptr<TensorAttr>, iree_hal_buffer_view_t *>
+      variantPack = {
+          {X, xB},
+          {W, wB},
+          {Y, yB},
+      };
+
+  REQUIRE(isOk(graph->execute(variantPack)));
 }

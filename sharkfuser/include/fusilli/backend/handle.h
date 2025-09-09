@@ -61,22 +61,29 @@ public:
     return ok(std::move(handle));
   }
 
+  ErrorOr<Buffer> getBuffer() {
+    FUSILLI_LOG_LABEL_ENDL("INFO: Creating new buffer");
+
+    Buffer buffer = Buffer();
+
+    return ok(std::move(buffer));
+  }
+
   template <typename T>
-  ErrorOr<Buffer<T>> allocateBuffer(const std::vector<int64_t> &bufferShape,
-                                    const std::vector<T> &bufferData) {
+  ErrorObject allocateBuffer(iree_hal_buffer_view_t **bufferView,
+                             const std::vector<int64_t> &bufferShape,
+                             const std::vector<T> &bufferData) {
     FUSILLI_LOG_LABEL_ENDL("INFO: Allocating device buffer");
 
     std::vector<iree_hal_dim_t> bufferShapeCast(bufferShape.begin(),
                                                 bufferShape.end());
 
-    Buffer<T> buffer = Buffer<T>();
-    iree_hal_buffer_view_t *bufferView = buffer.getBufferView();
-
     iree_hal_allocator_t *device_allocator =
         iree_hal_device_allocator(device_.get());
 
     FUSILLI_CHECK_ERROR(iree_hal_buffer_view_allocate_buffer_copy(
-        device_.get(), device_allocator,
+        // IREE HAL device and allocator:
+        device_.get(), iree_hal_device_allocator(device_.get()),
         // Shape rank and dimensions:
         bufferShapeCast.size(), bufferShapeCast.data(),
         // Element type:
@@ -96,9 +103,9 @@ public:
         iree_make_const_byte_span(bufferData.data(),
                                   bufferData.size() * sizeof(T)),
         // Buffer view + storage are returned and owned by the caller:
-        &bufferView));
+        bufferView));
 
-    return ok(std::move(buffer));
+    return ok();
   }
 
   // Delete copy constructors, keep default move constructor and destructor

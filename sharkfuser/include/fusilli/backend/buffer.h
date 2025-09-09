@@ -21,7 +21,7 @@
 
 namespace fusilli {
 
-template <typename T> class Buffer {
+class Buffer {
 public:
   Buffer() {
     // Create a new IREE HAL buffer view.
@@ -32,6 +32,12 @@ public:
     bufferView_ = IreeHalBufferViewUniquePtrType(bufferView);
   }
 
+  // Returns a raw pointer to the underlying IREE HAL buffer view.
+  // WARNING: The returned raw pointer is not safe to store since
+  // its lifetime is tied to the `Buffer` object and only valid
+  // as long as this buffer exists.
+  iree_hal_buffer_view_t *getBufferView() const { return bufferView_.get(); }
+
   // Delete copy constructors, keep default move constructor and destructor
   Buffer(const Buffer &) = delete;
   Buffer &operator=(const Buffer &) = delete;
@@ -39,17 +45,7 @@ public:
   Buffer &operator=(Buffer &&) noexcept = default;
   ~Buffer() = default;
 
-  // Allow FusilliHandle objects to access private Buffer methods
-  // namely `getBufferView()`.
-  friend class FusilliHandle;
-
 private:
-  // Returns a raw pointer to the underlying IREE HAL buffer view.
-  // WARNING: The returned raw pointer is not safe to store since
-  // its lifetime is tied to the `Buffer` object and only valid
-  // as long as this buffer exists.
-  iree_hal_buffer_view_t *getBufferView() const { return bufferView_.get(); }
-
   IreeHalBufferViewUniquePtrType bufferView_;
 };
 
