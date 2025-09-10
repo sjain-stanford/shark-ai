@@ -132,10 +132,13 @@ public:
       FUSILLI_RETURN_ERROR_IF(it == variantPack.end(),
                               ErrorCode::TensorNotFound,
                               "Output tensor missing from variantPack");
-      iree_hal_buffer_view_t *rawOutputBufferView = nullptr;
+      iree_hal_buffer_view_t *outputBufferView = nullptr;
       FUSILLI_CHECK_ERROR(iree_runtime_call_outputs_pop_front_buffer_view(
-          &call, &rawOutputBufferView));
-      it->second.reset(rawOutputBufferView);
+          &call, &outputBufferView));
+      // This reset is required here to update Buffer's underlying
+      // raw pointer to outputBufferView and properly release any
+      // previously allocated and Buffer-owned buffer views.
+      it->second.reset(outputBufferView);
     }
 
     iree_runtime_call_deinitialize(&call);

@@ -71,15 +71,19 @@ public:
     return ok(Buffer(IreeHalBufferViewUniquePtrType(rawBufferView)));
   }
 
-  void reset(iree_hal_buffer_view_t *newBufferView) noexcept {
-    bufferView_.reset(newBufferView);
-  }
-
   // Allow creating empty (nullptr) initialized Buffer which is
   // useful for creating placeholder output buffers that are
   // populated by IREE's destination passing style APIs such as
-  // `iree_runtime_call_outputs_pop_front_buffer_view`.
+  // `iree_runtime_call_outputs_pop_front_buffer_view`. After
+  // allocation of the raw `iree_hal_buffer_view_t *`, call
+  // Buffer::reset to have RAII guarantees for owning/releasing it.
   Buffer() = default;
+
+  // This is useful when starting with an empty Buffer (nullptr)
+  // that is later populated with an allocated buffer view.
+  void reset(iree_hal_buffer_view_t *newBufferView) noexcept {
+    bufferView_.reset(newBufferView);
+  }
 
   // Automatic (implicit) conversion operator for Buffer ->
   // iree_hal_buffer_view_t*
