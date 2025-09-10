@@ -89,20 +89,20 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
   REQUIRE(isOk(yBuf));
   REQUIRE(*yBuf != nullptr);
 
-  // {
-  //   // Copy results back from device (this also works for CPUs).
-  //   iree_hal_buffer_t *buffer = iree_hal_buffer_view_buffer(*yBuf);
-  //   iree_device_size_t byte_length = iree_hal_buffer_view_byte_length(*yBuf);
-  //   std::vector<half> hostData(byte_length / sizeof(half));
-  //   REQUIRE(isOk(iree_hal_device_transfer_d2h(
-  //       handle.getDevice(), buffer, 0, hostData.data(), byte_length,
-  //       IREE_HAL_TRANSFER_BUFFER_FLAG_DEFAULT, iree_infinite_timeout())));
+  {
+    // Copy results back from device (this also works for CPUs).
+    iree_hal_buffer_t *buffer = iree_hal_buffer_view_buffer(*yBuf);
+    iree_device_size_t byte_length = iree_hal_buffer_view_byte_length(*yBuf);
+    std::vector<half> hostData(byte_length / sizeof(half));
+    REQUIRE(isOk(iree_hal_device_transfer_d2h(
+        handle.getDevice(), buffer, 0, hostData.data(), byte_length,
+        IREE_HAL_TRANSFER_BUFFER_FLAG_DEFAULT, iree_infinite_timeout())));
 
-  //   // Check the results.
-  //   for (auto v : hostData) {
-  //     REQUIRE(v == half(0.0f));
-  //   }
-  // }
+    // Check the results.
+    for (auto v : hostData) {
+      REQUIRE(v == half(0.0f));
+    }
+  }
 
   std::unordered_map<std::shared_ptr<TensorAttr>, iree_hal_buffer_view_t *>
       variantPack = {
@@ -114,16 +114,19 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
   REQUIRE(isOk(graph->execute(variantPack)));
   REQUIRE(*yBuf != nullptr);
 
-  // // Copy results back from device (this also works for CPUs).
-  // iree_hal_buffer_t *buffer = iree_hal_buffer_view_buffer(*yBuf);
-  // iree_device_size_t byte_length = iree_hal_buffer_view_byte_length(*yBuf);
-  // std::vector<half> hostData(byte_length / sizeof(half));
-  // REQUIRE(isOk(iree_hal_device_transfer_d2h(
-  //     handle.getDevice(), buffer, 0, hostData.data(), byte_length,
-  //     IREE_HAL_TRANSFER_BUFFER_FLAG_DEFAULT, iree_infinite_timeout())));
+  {
+    auto yBuf = variantPack[Y];
+    // Copy results back from device (this also works for CPUs).
+    iree_hal_buffer_t *buffer = iree_hal_buffer_view_buffer(yBuf);
+    iree_device_size_t byte_length = iree_hal_buffer_view_byte_length(yBuf);
+    std::vector<half> hostData(byte_length / sizeof(half));
+    REQUIRE(isOk(iree_hal_device_transfer_d2h(
+        handle.getDevice(), buffer, 0, hostData.data(), byte_length,
+        IREE_HAL_TRANSFER_BUFFER_FLAG_DEFAULT, iree_infinite_timeout())));
 
-  // // Check the results.
-  // for (auto v : hostData) {
-  //   REQUIRE(v == half(128.0f));
-  // }
+    // Check the results.
+    for (auto v : hostData) {
+      REQUIRE(v == half(128.0f));
+    }
+  }
 }
