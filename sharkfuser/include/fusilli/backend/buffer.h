@@ -71,6 +71,12 @@ public:
     return ok(Buffer(IreeHalBufferViewUniquePtrType(rawBufferView)));
   }
 
+  // Allow creating empty (nullptr) initialized Buffer which is
+  // useful for creating placeholder output buffers that are
+  // populated by IREE's destination passing style APIs such as
+  // `iree_runtime_call_outputs_pop_front_buffer_view`.
+  Buffer() = default;
+
   // Automatic (implicit) conversion operator for Buffer ->
   // iree_hal_buffer_view_t*
   operator iree_hal_buffer_view_t *() const { return getBufferView(); }
