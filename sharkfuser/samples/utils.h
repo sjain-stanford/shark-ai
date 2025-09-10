@@ -13,9 +13,9 @@
 #ifndef FUSILLI_SAMPLES_UTILS_H
 #define FUSILLI_SAMPLES_UTILS_H
 
-#include <vector>
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
+#include <vector>
 
 // Utility to convert vector of dims from int64_t to size_t (unsigned long)
 // which is compatible with `iree_hal_dim_t` and fixes narrowing conversion

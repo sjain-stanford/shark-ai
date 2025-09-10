@@ -73,28 +73,29 @@ static const std::unordered_map<Backend, std::vector<std::string>>
         },
 };
 
-// Map from native element type to IREE HAL element type
-template <typename T>
-struct IreeHalElementTypeTrait;
+// Map from primitive types to IREE HAL element type using template
+// specializations
+template <typename T> struct IreeHalElementType;
 
-template <>
-struct IreeHalElementTypeTrait<float> {
-  static constexpr iree_hal_element_type_t kType = IREE_HAL_ELEMENT_TYPE_FLOAT_32;
+template <> struct IreeHalElementType<float> {
+  static constexpr iree_hal_element_type_t type =
+      IREE_HAL_ELEMENT_TYPE_FLOAT_32;
 };
 
-template <>
-struct IreeHalElementTypeTrait<half> {  // assuming `half` is your fp16 type
-  static constexpr iree_hal_element_type_t kType = IREE_HAL_ELEMENT_TYPE_FLOAT_16;
+template <> struct IreeHalElementType<half> {
+  static constexpr iree_hal_element_type_t type =
+      IREE_HAL_ELEMENT_TYPE_FLOAT_16;
 };
 
-template <>
-struct IreeHalElementTypeTrait<int32_t> {
-  static constexpr iree_hal_element_type_t kType = IREE_HAL_ELEMENT_TYPE_SINT_32;
+// Assert for unsupported types
+template <typename T> struct IreeHalElementType {
+  static_assert(sizeof(T) == 0, "Unsupported type for IreeHalElementType");
 };
 
-// Add other specializations as needed...
-
-
+// Usage
+template <typename T> iree_hal_element_type_t getIreeHalElementTypeForT() {
+  return IreeHalElementType<T>::type;
+}
 
 // Custom deleter for IREE runtime instance
 struct IreeRuntimeInstanceDeleter {

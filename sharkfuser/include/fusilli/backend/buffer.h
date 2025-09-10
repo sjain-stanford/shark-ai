@@ -51,8 +51,7 @@ public:
         // Shape rank and dimensions:
         bufferShape.size(), bufferShape.data(),
         // Element type:
-        // TODO: Configure based on T
-        IREE_HAL_ELEMENT_TYPE_FLOAT_16,
+        getIreeHalElementTypeForT<T>(),
         // Encoding type:
         IREE_HAL_ENCODING_TYPE_DENSE_ROW_MAJOR,
         (iree_hal_buffer_params_t){
