@@ -71,9 +71,6 @@ public:
   friend class Graph;
   friend class Buffer;
 
-  // TODO: temp, remove
-  iree_hal_device_t *getDevice() const { return device_.get(); }
-
 private:
   // Creates static singleton IREE runtime instance shared across
   // handles/threads
@@ -92,7 +89,7 @@ private:
   // WARNING: The returned raw pointer is not safe to store since
   // its lifetime is tied to the `FusilliHandle` object and only
   // valid as long as this handle exists.
-  // iree_hal_device_t *getDevice() const { return device_.get(); }
+  iree_hal_device_t *getDevice() const { return device_.get(); }
 
   // Returns a raw pointer to the underlying IREE runtime instance.
   // WARNING: The returned raw pointer is not safe to store since

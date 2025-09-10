@@ -53,7 +53,7 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
     return std::make_tuple(graph, X, W, Y);
   };
 
-  // Parameterize sample by backend
+  // Parameterize sample by backend and create device-specific handles
   std::optional<ErrorOr<FusilliHandle>> handleOrError;
   SECTION("cpu backend") {
     handleOrError.emplace(FusilliHandle::create(Backend::CPU));
@@ -67,23 +67,38 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
   REQUIRE(isOk(*handleOrError));
   FusilliHandle &handle = **handleOrError;
 
+  // Build graph for the given handle (device), validate and compile it.
   auto [graph, X, W, Y] = build_new_graph(handle);
 
+  // Populate and check input buffer
   auto xBuf = std::make_shared<Buffer>(FUSILLI_REQUIRE_UNWRAP(
       Buffer::allocate(handle,
                        /*shape=*/castToSizeT({n, c, h, w}),
                        /*data=*/std::vector<half>(n * c * h * w, half(1.0f)))));
   REQUIRE(*xBuf != nullptr);
+  std::vector<half> input;
+  REQUIRE(isOk(xBuf->read(handle, input)));
+  for (auto val : input) {
+    REQUIRE(val == half(1.0f));
+  }
 
+  // Populate and check weight buffer
   auto wBuf = std::make_shared<Buffer>(FUSILLI_REQUIRE_UNWRAP(
       Buffer::allocate(handle,
                        /*shape=*/castToSizeT({k, c, r, s}),
                        /*data=*/std::vector<half>(k * c * r * s, half(1.0f)))));
   REQUIRE(*wBuf != nullptr);
+  std::vector<half> weight;
+  REQUIRE(isOk(wBuf->read(handle, weight)));
+  for (auto val : weight) {
+    REQUIRE(val == half(1.0f));
+  }
 
+  // Create empty result buffer
   auto yBuf = std::make_shared<Buffer>();
   REQUIRE(*yBuf == nullptr);
 
+  // Create variant pack
   const std::unordered_map<std::shared_ptr<TensorAttr>, std::shared_ptr<Buffer>>
       variantPack = {
           {X, xBuf},
@@ -91,21 +106,14 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
           {Y, yBuf},
       };
 
+  // Execute graph
   REQUIRE(isOk(graph->execute(variantPack)));
+
+  // Check result buffer
   REQUIRE(*yBuf != nullptr);
-
-  {
-    // Copy results back from device (this also works for CPUs).
-    iree_hal_buffer_t *buffer = iree_hal_buffer_view_buffer(*yBuf);
-    iree_device_size_t byte_length = iree_hal_buffer_view_byte_length(*yBuf);
-    std::vector<half> hostData(byte_length / sizeof(half));
-    REQUIRE(isOk(iree_hal_device_transfer_d2h(
-        handle.getDevice(), buffer, 0, hostData.data(), byte_length,
-        IREE_HAL_TRANSFER_BUFFER_FLAG_DEFAULT, iree_infinite_timeout())));
-
-    // Check the results.
-    for (auto v : hostData) {
-      REQUIRE(v == half(128.0f));
-    }
+  std::vector<half> result;
+  REQUIRE(isOk(yBuf->read(handle, result)));
+  for (auto val : result) {
+    REQUIRE(val == half(128.0f));
   }
 }

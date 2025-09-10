@@ -76,6 +76,30 @@ public:
     return ok(Buffer(IreeHalBufferViewUniquePtrType(rawBufferView)));
   }
 
+  template <typename T>
+  ErrorObject read(const FusilliHandle &handle, std::vector<T> &outData) {
+    FUSILLI_LOG_LABEL_ENDL(
+        "INFO: Reading device buffers (involves device-to-host transfer)");
+
+    // Resize output vector `outData` based on buffer size.
+    FUSILLI_RETURN_ERROR_IF(
+        outData.size() != 0, ErrorCode::RuntimeFailure,
+        "hostData isn't empty, can't proceed with Buffer::read");
+    iree_device_size_t byte_length =
+        iree_hal_buffer_view_byte_length(getBufferView());
+    outData.resize(byte_length / sizeof(T));
+
+    // Get the underlying buffer from the buffer view.
+    iree_hal_buffer_t *buffer = iree_hal_buffer_view_buffer(getBufferView());
+
+    // Copy results back from device.
+    FUSILLI_CHECK_ERROR(iree_hal_device_transfer_d2h(
+        handle.getDevice(), buffer, 0, outData.data(), byte_length,
+        IREE_HAL_TRANSFER_BUFFER_FLAG_DEFAULT, iree_infinite_timeout()));
+
+    return ok();
+  }
+
   // Allow creating empty (nullptr) initialized Buffer which is
   // useful for creating placeholder output buffers that are
   // populated by IREE's destination passing style APIs such as
