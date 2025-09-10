@@ -69,35 +69,35 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
 
   auto [graph, X, W, Y] = build_new_graph(handle);
 
-  Buffer xBuf = FUSILLI_REQUIRE_UNWRAP(
+  auto xBuf = std::make_shared<Buffer>(FUSILLI_REQUIRE_UNWRAP(
       Buffer::allocate(handle,
                        /*shape=*/castToSizeT({n, c, h, w}),
-                       /*data=*/std::vector<half>(n * c * h * w, half(1.0f))));
-  REQUIRE(xBuf != nullptr);
+                       /*data=*/std::vector<half>(n * c * h * w, half(1.0f)))));
+  REQUIRE(*xBuf != nullptr);
 
-  Buffer wBuf = FUSILLI_REQUIRE_UNWRAP(
+  auto wBuf = std::make_shared<Buffer>(FUSILLI_REQUIRE_UNWRAP(
       Buffer::allocate(handle,
                        /*shape=*/castToSizeT({k, c, r, s}),
-                       /*data=*/std::vector<half>(k * c * r * s, half(1.0f))));
-  REQUIRE(wBuf != nullptr);
+                       /*data=*/std::vector<half>(k * c * r * s, half(1.0f)))));
+  REQUIRE(*wBuf != nullptr);
 
-  Buffer yBuf;
-  REQUIRE(yBuf == nullptr);
+  auto yBuf = std::make_shared<Buffer>();
+  REQUIRE(*yBuf == nullptr);
 
-  const std::unordered_map<std::shared_ptr<TensorAttr>, Buffer &> variantPack =
-      {
+  const std::unordered_map<std::shared_ptr<TensorAttr>, std::shared_ptr<Buffer>>
+      variantPack = {
           {X, xBuf},
           {W, wBuf},
           {Y, yBuf},
       };
 
   REQUIRE(isOk(graph->execute(variantPack)));
-  REQUIRE(yBuf != nullptr);
+  REQUIRE(*yBuf != nullptr);
 
   {
     // Copy results back from device (this also works for CPUs).
-    iree_hal_buffer_t *buffer = iree_hal_buffer_view_buffer(yBuf);
-    iree_device_size_t byte_length = iree_hal_buffer_view_byte_length(yBuf);
+    iree_hal_buffer_t *buffer = iree_hal_buffer_view_buffer(*yBuf);
+    iree_device_size_t byte_length = iree_hal_buffer_view_byte_length(*yBuf);
     std::vector<half> hostData(byte_length / sizeof(half));
     REQUIRE(isOk(iree_hal_device_transfer_d2h(
         handle.getDevice(), buffer, 0, hostData.data(), byte_length,
