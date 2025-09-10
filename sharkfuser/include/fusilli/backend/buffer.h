@@ -32,6 +32,11 @@ public:
                             ErrorCode::RuntimeFailure,
                             "External buffer view is NULL");
 
+    // Since this is externally allocated, we just want to hold on to it
+    // as long as the Buffer object is alive, and release when it goes
+    // out of scope. When released, the underlying buffer may be destroyed
+    // depending on if the external owner has released it. This call basically
+    // just increases the reference count of `iree_hal_buffer_view_t *` by 1.
     iree_hal_buffer_view_retain(externalBufferView);
     return ok(Buffer(IreeHalBufferViewUniquePtrType(externalBufferView)));
   }
