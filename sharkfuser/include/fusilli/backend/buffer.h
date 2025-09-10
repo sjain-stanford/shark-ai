@@ -71,6 +71,10 @@ public:
     return ok(Buffer(IreeHalBufferViewUniquePtrType(rawBufferView)));
   }
 
+  void reset(iree_hal_buffer_view_t *newBufferView) noexcept {
+    bufferView_.reset(newBufferView);
+  }
+
   // Allow creating empty (nullptr) initialized Buffer which is
   // useful for creating placeholder output buffers that are
   // populated by IREE's destination passing style APIs such as

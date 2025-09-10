@@ -16,6 +16,7 @@
 
 #include "fusilli/attributes/tensor_attributes.h"
 #include "fusilli/backend/backend.h"
+#include "fusilli/backend/buffer.h"
 #include "fusilli/backend/handle.h"
 #include "fusilli/graph/context.h"
 #include "fusilli/node/conv_node.h"
@@ -102,9 +103,8 @@ public:
   // TODO: Memoize `iree_runtime_call_t` initialization and populate buffer
   // views at setup to avoid paying the penalty for every `Graph::execute`
   // invocation.
-  ErrorObject execute(
-      std::unordered_map<std::shared_ptr<TensorAttr>, iree_hal_buffer_view_t *>
-          &variantPack) const {
+  ErrorObject execute(const std::unordered_map<std::shared_ptr<TensorAttr>,
+                                               Buffer &> &variantPack) const {
     FUSILLI_LOG_LABEL_ENDL("INFO: Executing Graph");
     FUSILLI_RETURN_ERROR_IF(session_ == nullptr, ErrorCode::NotCompiled,
                             "Graph must be compiled before being executed");
@@ -132,8 +132,10 @@ public:
       FUSILLI_RETURN_ERROR_IF(it == variantPack.end(),
                               ErrorCode::TensorNotFound,
                               "Output tensor missing from variantPack");
+      iree_hal_buffer_view_t *rawOutputBufferView = nullptr;
       FUSILLI_CHECK_ERROR(iree_runtime_call_outputs_pop_front_buffer_view(
-          &call, &(it->second)));
+          &call, &rawOutputBufferView));
+      it->second.reset(rawOutputBufferView);
     }
 
     iree_runtime_call_deinitialize(&call);

@@ -84,18 +84,17 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
   Buffer yBuf;
   REQUIRE(yBuf == nullptr);
 
-  std::unordered_map<std::shared_ptr<TensorAttr>, iree_hal_buffer_view_t *>
-      variantPack = {
+  const std::unordered_map<std::shared_ptr<TensorAttr>, Buffer &> variantPack =
+      {
           {X, xBuf},
           {W, wBuf},
           {Y, yBuf},
       };
 
   REQUIRE(isOk(graph->execute(variantPack)));
-  // REQUIRE(yBuf != nullptr);
+  REQUIRE(yBuf != nullptr);
 
   {
-    auto yBuf = variantPack[Y];
     // Copy results back from device (this also works for CPUs).
     iree_hal_buffer_t *buffer = iree_hal_buffer_view_buffer(yBuf);
     iree_device_size_t byte_length = iree_hal_buffer_view_byte_length(yBuf);
