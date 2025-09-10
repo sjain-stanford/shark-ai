@@ -6,6 +6,8 @@
 
 #include <fusilli.h>
 
+#include "../utils.h"
+
 #include <catch2/catch_test_macros.hpp>
 #include <cstdint>
 #include <memory>
@@ -66,28 +68,31 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
 
   auto [graph, X, W, Y] = build_new_graph(handle);
 
-  auto xB =
-      Buffer::allocate(handle, /*shape=*/{n, c, h, w},
+  auto xBuf =
+      Buffer::allocate(handle,
+                       /*shape=*/castToSizeT({n, c, h, w}),
                        /*data=*/std::vector<half>(n * c * h * w, half(1.0f)));
-  REQUIRE(isOk(xB));
-  REQUIRE(*xB != nullptr);
+  REQUIRE(isOk(xBuf));
+  REQUIRE(*xBuf != nullptr);
 
-  auto wB =
-      Buffer::allocate(handle, /*shape=*/{k, c, r, s},
+  auto wBuf =
+      Buffer::allocate(handle,
+                       /*shape=*/castToSizeT({k, c, r, s}),
                        /*data=*/std::vector<half>(k * c * r * s, half(1.0f)));
-  REQUIRE(isOk(wB));
-  REQUIRE(*wB != nullptr);
+  REQUIRE(isOk(wBuf));
+  REQUIRE(*wBuf != nullptr);
 
-  auto yB =
-      Buffer::allocate(handle, /*shape=*/{n, k, h, w},
-                       /*data=*/std::vector<half>(n * k * h * w, half(1.0f)));
-  REQUIRE(isOk(yB));
-  REQUIRE(*yB != nullptr);
+  auto yBuf =
+      Buffer::allocate(handle,
+                       /*shape=*/castToSizeT({n, k, h, w}),
+                       /*data=*/std::vector<half>(n * k * h * w, half(0.0f)));
+  REQUIRE(isOk(yBuf));
+  REQUIRE(*yBuf != nullptr);
 
   // {
   //   // Copy results back from device (this also works for CPUs).
-  //   iree_hal_buffer_t *buffer = iree_hal_buffer_view_buffer(*yB);
-  //   iree_device_size_t byte_length = iree_hal_buffer_view_byte_length(*yB);
+  //   iree_hal_buffer_t *buffer = iree_hal_buffer_view_buffer(*yBuf);
+  //   iree_device_size_t byte_length = iree_hal_buffer_view_byte_length(*yBuf);
   //   std::vector<half> hostData(byte_length / sizeof(half));
   //   REQUIRE(isOk(iree_hal_device_transfer_d2h(
   //       handle.getDevice(), buffer, 0, hostData.data(), byte_length,
@@ -95,23 +100,23 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
 
   //   // Check the results.
   //   for (auto v : hostData) {
-  //     REQUIRE(v == half(1.0f));
+  //     REQUIRE(v == half(0.0f));
   //   }
   // }
 
   std::unordered_map<std::shared_ptr<TensorAttr>, iree_hal_buffer_view_t *>
       variantPack = {
-          {X, *xB},
-          {W, *wB},
-          {Y, *yB},
+          {X, *xBuf},
+          {W, *wBuf},
+          {Y, *yBuf},
       };
 
   REQUIRE(isOk(graph->execute(variantPack)));
-  REQUIRE(*yB != nullptr);
+  REQUIRE(*yBuf != nullptr);
 
   // // Copy results back from device (this also works for CPUs).
-  // iree_hal_buffer_t *buffer = iree_hal_buffer_view_buffer(*yB);
-  // iree_device_size_t byte_length = iree_hal_buffer_view_byte_length(*yB);
+  // iree_hal_buffer_t *buffer = iree_hal_buffer_view_buffer(*yBuf);
+  // iree_device_size_t byte_length = iree_hal_buffer_view_byte_length(*yBuf);
   // std::vector<half> hostData(byte_length / sizeof(half));
   // REQUIRE(isOk(iree_hal_device_transfer_d2h(
   //     handle.getDevice(), buffer, 0, hostData.data(), byte_length,

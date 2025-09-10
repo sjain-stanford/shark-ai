@@ -38,20 +38,18 @@ public:
 
   // Factory: Allocates a new buffer view and takes ownership
   template <typename T>
-  static ErrorOr<Buffer> allocate(const FusilliHandle &handle,
-                                  const std::vector<int64_t> &bufferShape,
-                                  const std::vector<T> &bufferData) {
+  static ErrorOr<Buffer>
+  allocate(const FusilliHandle &handle,
+           const std::vector<iree_hal_dim_t> &bufferShape,
+           const std::vector<T> &bufferData) {
     FUSILLI_LOG_LABEL_ENDL("INFO: Allocating new device buffer");
 
-    std::vector<iree_hal_dim_t> bufferShapeCast(bufferShape.begin(),
-                                                bufferShape.end());
     iree_hal_buffer_view_t *rawBufferView = nullptr;
-
     FUSILLI_CHECK_ERROR(iree_hal_buffer_view_allocate_buffer_copy(
         // IREE HAL device and allocator:
         handle.getDevice(), iree_hal_device_allocator(handle.getDevice()),
         // Shape rank and dimensions:
-        bufferShapeCast.size(), bufferShapeCast.data(),
+        bufferShape.size(), bufferShape.data(),
         // Element type:
         // TODO: Configure based on T
         IREE_HAL_ELEMENT_TYPE_FLOAT_16,
@@ -74,12 +72,6 @@ public:
     return ok(Buffer(IreeHalBufferViewUniquePtrType(rawBufferView)));
   }
 
-  // Returns a raw pointer to the underlying IREE HAL buffer view.
-  // WARNING: The returned raw pointer is not safe to store since
-  // its lifetime is tied to the `Buffer` object and only valid
-  // as long as this buffer exists.
-  iree_hal_buffer_view_t *getBufferView() const { return bufferView_.get(); }
-
   // Automatic (implicit) conversion operator for Buffer ->
   // iree_hal_buffer_view_t*
   operator iree_hal_buffer_view_t *() const { return getBufferView(); }
@@ -92,6 +84,14 @@ public:
   ~Buffer() = default;
 
 private:
+  // Returns a raw pointer to the underlying IREE HAL buffer view.
+  // WARNING: The returned raw pointer is not safe to store since
+  // its lifetime is tied to the `Buffer` object and only valid
+  // as long as this buffer exists.
+  iree_hal_buffer_view_t *getBufferView() const { return bufferView_.get(); }
+
+  // Explicit constructor is private. Create `Buffer` using one of the
+  // factory methods above - `Buffer::import` or `Buffer::allocate`.
   explicit Buffer(IreeHalBufferViewUniquePtrType bufferView)
       : bufferView_(std::move(bufferView)) {}
 

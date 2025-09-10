@@ -14,6 +14,8 @@
 #ifndef FUSILLI_BACKEND_BACKEND_H
 #define FUSILLI_BACKEND_BACKEND_H
 
+#include "fusilli/attributes/types.h"
+
 #include <iree/runtime/api.h>
 
 #include <memory>
@@ -70,6 +72,29 @@ static const std::unordered_map<Backend, std::vector<std::string>>
             },
         },
 };
+
+// Map from native element type to IREE HAL element type
+template <typename T>
+struct IreeHalElementTypeTrait;
+
+template <>
+struct IreeHalElementTypeTrait<float> {
+  static constexpr iree_hal_element_type_t kType = IREE_HAL_ELEMENT_TYPE_FLOAT_32;
+};
+
+template <>
+struct IreeHalElementTypeTrait<half> {  // assuming `half` is your fp16 type
+  static constexpr iree_hal_element_type_t kType = IREE_HAL_ELEMENT_TYPE_FLOAT_16;
+};
+
+template <>
+struct IreeHalElementTypeTrait<int32_t> {
+  static constexpr iree_hal_element_type_t kType = IREE_HAL_ELEMENT_TYPE_SINT_32;
+};
+
+// Add other specializations as needed...
+
+
 
 // Custom deleter for IREE runtime instance
 struct IreeRuntimeInstanceDeleter {
