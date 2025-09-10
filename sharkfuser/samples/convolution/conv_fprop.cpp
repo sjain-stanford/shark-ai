@@ -51,34 +51,35 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
   };
 
   // Parameterize sample by backend
-  std::optional<ErrorOr<FusilliHandle>> handle;
+  std::optional<ErrorOr<FusilliHandle>> handleOrError;
   SECTION("cpu backend") {
-    handle.emplace(FusilliHandle::create(Backend::CPU));
+    handleOrError.emplace(FusilliHandle::create(Backend::CPU));
   }
 #ifdef FUSILLI_ENABLE_AMDGPU
   SECTION("gfx942 backend") {
-    handle.emplace(FusilliHandle::create(Backend::GFX942));
+    handleOrError.emplace(FusilliHandle::create(Backend::GFX942));
   }
 #endif
-  REQUIRE(handle.has_value());
-  REQUIRE(isOk(*handle));
+  REQUIRE(handleOrError.has_value());
+  REQUIRE(isOk(*handleOrError));
+  FusilliHandle &handle = **handleOrError;
 
-  auto [graph, X, W, Y] = build_new_graph(**handle);
+  auto [graph, X, W, Y] = build_new_graph(handle);
 
   auto xB =
-      Buffer::allocate(**handle, /*shape=*/{n, c, h, w},
+      Buffer::allocate(handle, /*shape=*/{n, c, h, w},
                        /*data=*/std::vector<half>(n * c * h * w, half(1.0f)));
   REQUIRE(isOk(xB));
   REQUIRE(*xB != nullptr);
 
   auto wB =
-      Buffer::allocate(**handle, /*shape=*/{k, c, r, s},
+      Buffer::allocate(handle, /*shape=*/{k, c, r, s},
                        /*data=*/std::vector<half>(k * c * r * s, half(1.0f)));
   REQUIRE(isOk(wB));
   REQUIRE(*wB != nullptr);
 
   auto yB =
-      Buffer::allocate(**handle, /*shape=*/{n, k, h, w},
+      Buffer::allocate(handle, /*shape=*/{n, k, h, w},
                        /*data=*/std::vector<half>(n * k * h * w, half(1.0f)));
   REQUIRE(isOk(yB));
   REQUIRE(*yB != nullptr);
@@ -89,7 +90,7 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
   //   iree_device_size_t byte_length = iree_hal_buffer_view_byte_length(*yB);
   //   std::vector<half> hostData(byte_length / sizeof(half));
   //   REQUIRE(isOk(iree_hal_device_transfer_d2h(
-  //       (**handle).getDevice(), buffer, 0, hostData.data(), byte_length,
+  //       handle.getDevice(), buffer, 0, hostData.data(), byte_length,
   //       IREE_HAL_TRANSFER_BUFFER_FLAG_DEFAULT, iree_infinite_timeout())));
 
   //   // Check the results.
@@ -113,7 +114,7 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
   // iree_device_size_t byte_length = iree_hal_buffer_view_byte_length(*yB);
   // std::vector<half> hostData(byte_length / sizeof(half));
   // REQUIRE(isOk(iree_hal_device_transfer_d2h(
-  //     (**handle).getDevice(), buffer, 0, hostData.data(), byte_length,
+  //     handle.getDevice(), buffer, 0, hostData.data(), byte_length,
   //     IREE_HAL_TRANSFER_BUFFER_FLAG_DEFAULT, iree_infinite_timeout())));
 
   // // Check the results.
