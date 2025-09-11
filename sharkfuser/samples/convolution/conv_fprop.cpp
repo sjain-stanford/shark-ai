@@ -48,7 +48,7 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
 
     REQUIRE(isOk(graph->validate()));
 
-    REQUIRE(isOk(graph->compile(handle, /*remove=*/false)));
+    REQUIRE(isOk(graph->compile(handle, /*remove=*/true)));
 
     return std::make_tuple(graph, X, W, Y);
   };
