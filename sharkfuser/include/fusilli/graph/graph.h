@@ -26,8 +26,6 @@
 #include "fusilli/support/extras.h"
 #include "fusilli/support/logging.h"
 
-#include <iree/runtime/api.h>
-
 #include <cassert>
 #include <cstdlib>
 #include <filesystem>
@@ -97,57 +95,11 @@ public:
     return ok();
   }
 
-  // Executes the graph using IREE runtime. Requires a `variantPack` which
-  // is a map from `TensorAttr` to `Buffer` wrapping the raw
-  // `iree_hal_buffer_view_t *`.
-  //
-  // TODO: Memoize `iree_runtime_call_t` initialization and populate buffer
-  // views at setup to avoid paying the penalty for every `Graph::execute`
-  // invocation. Use `iree_runtime_call_reset` to reset the call inputs/outputs
-  // if needed.
-  ErrorObject execute(
-      const std::unordered_map<std::shared_ptr<TensorAttr>,
-                               std::shared_ptr<Buffer>> &variantPack) const {
-    FUSILLI_LOG_LABEL_ENDL("INFO: Executing Graph");
-    FUSILLI_RETURN_ERROR_IF(session_ == nullptr, ErrorCode::NotCompiled,
-                            "Graph must be compiled before being executed");
-
-    iree_runtime_call_t call;
-    FUSILLI_CHECK_ERROR(iree_runtime_call_initialize_by_name(
-        session_.get(), iree_make_cstring_view("module.main"), &call));
-
-    // Populate input buffers.
-    for (const auto &input : fullGraphInputsSorted_) {
-      auto it = variantPack.find(input);
-      FUSILLI_RETURN_ERROR_IF(it == variantPack.end(),
-                              ErrorCode::TensorNotFound,
-                              "Input tensor missing from variantPack");
-      FUSILLI_CHECK_ERROR(
-          iree_runtime_call_inputs_push_back_buffer_view(&call, *(it->second)));
-    }
-
-    // Synchronously perform the call.
-    FUSILLI_CHECK_ERROR(iree_runtime_call_invoke(&call, /*flags=*/0));
-
-    // Extract output buffers.
-    for (const auto &output : fullGraphOutputsSorted_) {
-      auto it = variantPack.find(output);
-      FUSILLI_RETURN_ERROR_IF(it == variantPack.end(),
-                              ErrorCode::TensorNotFound,
-                              "Output tensor missing from variantPack");
-      iree_hal_buffer_view_t *outputBufferView = nullptr;
-      FUSILLI_CHECK_ERROR(iree_runtime_call_outputs_pop_front_buffer_view(
-          &call, &outputBufferView));
-
-      // This reset is required here to update Buffer's underlying
-      // raw pointer to outputBufferView and properly release any
-      // previously allocated and Buffer-owned buffer views.
-      it->second->reset(outputBufferView);
-    }
-
-    iree_runtime_call_deinitialize(&call);
-    return ok();
-  }
+  // Executes the graph using IREE runtime. Requires a `variantPack` which is a
+  // map from `TensorAttr` to `Buffer` wrapping the `iree_hal_buffer_view_t *`.
+  ErrorObject
+  execute(const std::unordered_map<std::shared_ptr<TensorAttr>,
+                                   std::shared_ptr<Buffer>> &variantPack) const;
 
   // Delete copy constructors, keep default move constructor and destructor.
   Graph(const Graph &) = delete;
