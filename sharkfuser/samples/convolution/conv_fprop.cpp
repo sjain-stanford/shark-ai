@@ -70,31 +70,26 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
   // Build graph for the given handle (device), validate and compile it.
   auto [graph, X, W, Y] = build_new_graph(handle);
 
-  // Populate and check input buffer
+  // Allocate input buffer
   auto xBuf = std::make_shared<Buffer>(FUSILLI_REQUIRE_UNWRAP(
       Buffer::allocate(handle,
                        /*shape=*/castToSizeT({n, c, h, w}),
                        /*data=*/std::vector<half>(n * c * h * w, half(1.0f)))));
+  // xBuf is a shared_ptr<Buffer>.
+  // *xBuf is the Buffer object after de-referencing.
+  // The implicit cast from `Buffer` -> `iree_hal_buffer_view_t *` makes the
+  // `*xBuf != nullptr` check on the underlying raw `iree_hal_buffer_view_t *`
+  // which is what we want.
   REQUIRE(*xBuf != nullptr);
-  std::vector<half> input;
-  REQUIRE(isOk(xBuf->read(handle, input)));
-  for (auto val : input) {
-    REQUIRE(val == half(1.0f));
-  }
 
-  // Populate and check weight buffer
+  // Allocate weight buffer
   auto wBuf = std::make_shared<Buffer>(FUSILLI_REQUIRE_UNWRAP(
       Buffer::allocate(handle,
                        /*shape=*/castToSizeT({k, c, r, s}),
                        /*data=*/std::vector<half>(k * c * r * s, half(1.0f)))));
   REQUIRE(*wBuf != nullptr);
-  std::vector<half> weight;
-  REQUIRE(isOk(wBuf->read(handle, weight)));
-  for (auto val : weight) {
-    REQUIRE(val == half(1.0f));
-  }
 
-  // Create empty result buffer
+  // Create empty output buffer (NOT pre-allocated)
   auto yBuf = std::make_shared<Buffer>();
   REQUIRE(*yBuf == nullptr);
 
@@ -106,11 +101,27 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
           {Y, yBuf},
       };
 
-  // Execute graph
-  REQUIRE(isOk(graph->execute(variantPack)));
+  for (size_t i = 0; i < 10; i++) {
+    // Execute graph
+    REQUIRE(isOk(graph->execute(variantPack)));
+    REQUIRE(*yBuf != nullptr);
+  }
 
-  // Check result buffer
-  REQUIRE(*yBuf != nullptr);
+  // Make sure input/weight buffers are held until `xBuf` and `yBuf` are alive.
+  // If `Graph::execute` were to release them (via
+  // `iree_hal_buffer_view_release`) right after the call to
+  // `iree_runtime_call_inputs_push_back_buffer_view` then this would seg-fault
+  // with a use-after-free, so this test guards against that.
+  std::vector<half> input;
+  REQUIRE(isOk(xBuf->read(handle, input)));
+  for (auto val : input) {
+    REQUIRE(val == half(1.0f));
+  }
+  std::vector<half> weight;
+  REQUIRE(isOk(wBuf->read(handle, weight)));
+  for (auto val : weight) {
+    REQUIRE(val == half(1.0f));
+  }
   std::vector<half> result;
   REQUIRE(isOk(yBuf->read(handle, result)));
   for (auto val : result) {

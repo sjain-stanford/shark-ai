@@ -233,6 +233,7 @@ public:
   }
 
 private:
+  // Definition in `fusilli/backend/runtime.h`.
   ErrorObject createPerGraphSession(const Handle &handle,
                                     const std::string &vmfbPath);
 

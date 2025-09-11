@@ -184,29 +184,30 @@ Buffer::allocate(const Handle &handle,
       // The actual heap buffer to wrap or clone and its allocator:
       iree_make_const_byte_span(bufferData.data(),
                                 bufferData.size() * sizeof(T)),
-      // Buffer view + storage are returned and owned by the caller:
+      // Buffer view + storage are returned and owned by the caller
+      // (this Buffer object in this case):
       &rawBufferView));
 
   return ok(Buffer(IreeHalBufferViewUniquePtrType(rawBufferView)));
 }
 
-// Reads device buffer by initiating a device-to-host transfer then
+// Reads device buffer by initiating a device-to-host transfer and
 // populating `outData`.
 template <typename T>
 inline ErrorObject Buffer::read(const Handle &handle, std::vector<T> &outData) {
   FUSILLI_LOG_LABEL_ENDL(
       "INFO: Reading device buffers (involves device-to-host transfer)");
-
-  // Resize output vector `outData` based on buffer size.
   FUSILLI_RETURN_ERROR_IF(
       outData.size() != 0, ErrorCode::RuntimeFailure,
-      "hostData isn't empty, can't proceed with Buffer::read");
-  iree_device_size_t byte_length =
-      iree_hal_buffer_view_byte_length(getBufferView());
-  outData.resize(byte_length / sizeof(T));
+      "Can't proceed with Buffer::read as hostData is NOT empty");
 
   // Get the underlying buffer from the buffer view.
   iree_hal_buffer_t *buffer = iree_hal_buffer_view_buffer(getBufferView());
+
+  // Resize output vector `outData` based on buffer size.
+  iree_device_size_t byte_length =
+      iree_hal_buffer_view_byte_length(getBufferView());
+  outData.resize(byte_length / sizeof(T));
 
   // Copy results back from device.
   FUSILLI_CHECK_ERROR(iree_hal_device_transfer_d2h(
