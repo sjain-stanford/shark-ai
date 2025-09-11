@@ -73,28 +73,30 @@ static const std::unordered_map<Backend, std::vector<std::string>>
         },
 };
 
-// Map from primitive types to IREE HAL element type using template
-// specializations
+// Template specializations to map from primitive types
+// to IREE HAL element type.
 template <typename T> struct IreeHalElementType;
 
+// float -> IREE_HAL_ELEMENT_TYPE_FLOAT_32
 template <> struct IreeHalElementType<float> {
-  static constexpr iree_hal_element_type_t type =
+  static constexpr iree_hal_element_type_t kType =
       IREE_HAL_ELEMENT_TYPE_FLOAT_32;
 };
 
+// half -> IREE_HAL_ELEMENT_TYPE_FLOAT_16
 template <> struct IreeHalElementType<half> {
-  static constexpr iree_hal_element_type_t type =
+  static constexpr iree_hal_element_type_t kType =
       IREE_HAL_ELEMENT_TYPE_FLOAT_16;
 };
 
-// Assert for unsupported types
+// Assert for unsupported types.
 template <typename T> struct IreeHalElementType {
   static_assert(sizeof(T) == 0, "Unsupported type for IreeHalElementType");
 };
 
 // Usage
 template <typename T> iree_hal_element_type_t getIreeHalElementTypeForT() {
-  return IreeHalElementType<T>::type;
+  return IreeHalElementType<T>::kType;
 }
 
 // Custom deleter for IREE runtime instance

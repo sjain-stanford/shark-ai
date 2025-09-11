@@ -28,21 +28,6 @@ namespace fusilli {
 // `FusilliHandle::create()`. This allocates the necessary resources
 // (runtime instance, HAL device) whose lifetimes are managed / owned
 // by the handle(s).
-//
-// Here's a rough mapping of Fusilli constructs to IREE runtime constructs
-// (based on scope and lifetime):
-//
-//  - Group of `FusilliHandle`s manage the IREE runtime instance lifetime.
-//    An instance is shared across handles/threads/sessions and released
-//    when the last handle goes out of scope.
-//  - `FusilliHandle` manages IREE HAL device lifetime. Handles may be shared
-//    by multiple graphs (as long as they intend to run on the same device).
-//    Separate physical devices should have their own handles (hence logical
-//    HAL device) created. Graphs running on the same physical devices should
-//    reuse the same handle (hence logical HAL device). The device is released
-//    when the handle holding it goes out of scope.
-//  - `Graph` manages IREE runtime session lifetime. A session holds state on
-//    the HAL device and the loaded VM modules.
 class FusilliHandle {
 public:
   static ErrorOr<FusilliHandle> create(Backend backend) {
@@ -73,10 +58,11 @@ public:
 
 private:
   // Creates static singleton IREE runtime instance shared across
-  // handles/threads
+  // handles/threads. Definition in `fusilli/backend/runtime.h`.
   static ErrorOr<IreeRuntimeInstanceSharedPtrType> createSharedInstance();
 
-  // Creates IREE HAL device for this handle
+  // Creates IREE HAL device for this handle. Definition in
+  // `fusilli/backend/runtime.h`.
   ErrorObject createPerHandleDevice();
 
   // Private constructor (use factory `create` method for handle creation)

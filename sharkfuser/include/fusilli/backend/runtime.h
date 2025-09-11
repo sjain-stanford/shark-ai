@@ -9,12 +9,32 @@
 // This file contains all the wrapper code around IREE runtime C-APIs to create
 // and manage instances, devices, sessions and calls.
 //
+// Here's a rough mapping of Fusilli constructs to IREE runtime constructs
+// (based on scope and lifetime):
+//
+//  - Group of `FusilliHandle`s manage the IREE runtime instance lifetime.
+//    An instance is shared across handles/threads/sessions and released
+//    when the last handle goes out of scope.
+//  - `FusilliHandle` manages IREE HAL device lifetime. Handles may be shared
+//    by multiple graphs (as long as they intend to run on the same device).
+//    Separate physical devices should have their own handles (hence logical
+//    HAL device) created. Graphs running on the same physical devices should
+//    reuse the same handle (hence logical HAL device). The device is released
+//    when the handle holding it goes out of scope.
+//  - `Graph` manages IREE runtime session lifetime. A session holds state on
+//    the HAL device and the loaded VM modules.
+//  - `Buffer` manages IREE HAL buffer view lifetime. The buffer view is
+//    released either when the `Buffer` object holding it goes out of scope,
+//    or the underlying `bufferView_` (unique_ptr wrapping the raw
+//    `iree_hal_buffer_view_t *`) is reset.
+//
 //===----------------------------------------------------------------------===//
 
 #ifndef FUSILLI_BACKEND_RUNTIME_H
 #define FUSILLI_BACKEND_RUNTIME_H
 
 #include "fusilli/backend/backend.h"
+#include "fusilli/backend/buffer.h"
 #include "fusilli/backend/handle.h"
 #include "fusilli/graph/graph.h"
 #include "fusilli/support/logging.h"
