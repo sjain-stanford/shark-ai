@@ -43,10 +43,11 @@
 
 #include <mutex>
 #include <string>
+#include <vector>
 
 namespace fusilli {
 
-// Create static singleton IREE runtime instance shared across handles/threads
+// Create static singleton IREE runtime instance shared across handles/threads.
 inline ErrorOr<IreeRuntimeInstanceSharedPtrType>
 FusilliHandle::createSharedInstance() {
   // Mutex for thread-safe initialization of weakInstance
@@ -91,7 +92,7 @@ FusilliHandle::createSharedInstance() {
   return ok(sharedInstance);
 }
 
-// Create IREE HAL device for this handle
+// Create IREE HAL device for this handle.
 // TODO(#2151): This just creates the default device for now (which is like
 // a die roll when multiple GPUs are available). In the future we need to
 // allow specifying the exact device based on path or ID.
@@ -110,7 +111,7 @@ inline ErrorObject FusilliHandle::createPerHandleDevice() {
   return ok();
 }
 
-// Create IREE runtime session for this graph and load the compiled artifact
+// Create IREE runtime session for this graph and load the compiled artifact.
 inline ErrorObject Graph::createPerGraphSession(const FusilliHandle &handle,
                                                 const std::string &vmfbPath) {
   // Create a session even if one was created earlier, since the handle
@@ -133,6 +134,85 @@ inline ErrorObject Graph::createPerGraphSession(const FusilliHandle &handle,
   FUSILLI_LOG_LABEL_ENDL("INFO: Loading module in IREE runtime session");
   FUSILLI_CHECK_ERROR(iree_runtime_session_append_bytecode_module_from_file(
       session_.get(), vmfbPath.c_str()));
+
+  return ok();
+}
+
+// Factory: Imports an existing buffer view and retains ownership.
+inline ErrorOr<Buffer>
+Buffer::import(iree_hal_buffer_view_t *externalBufferView) {
+  FUSILLI_LOG_LABEL_ENDL("INFO: Importing pre-allocated device buffer");
+  FUSILLI_RETURN_ERROR_IF(externalBufferView == nullptr,
+                          ErrorCode::RuntimeFailure,
+                          "External buffer view is NULL");
+
+  // Since this is externally allocated, we just want to hold on to it
+  // as long as the Buffer object is alive, and release when it goes
+  // out of scope. When released, the underlying buffer may be destroyed
+  // depending on if the external owner has released it. This call basically
+  // just increases the reference count of `iree_hal_buffer_view_t *` by 1.
+  iree_hal_buffer_view_retain(externalBufferView);
+  return ok(Buffer(IreeHalBufferViewUniquePtrType(externalBufferView)));
+}
+
+// Factory: Allocates a new buffer view and takes ownership.
+template <typename T>
+inline ErrorOr<Buffer>
+Buffer::allocate(const FusilliHandle &handle,
+                 const std::vector<iree_hal_dim_t> &bufferShape,
+                 const std::vector<T> &bufferData) {
+  FUSILLI_LOG_LABEL_ENDL("INFO: Allocating new device buffer");
+
+  iree_hal_buffer_view_t *rawBufferView = nullptr;
+  FUSILLI_CHECK_ERROR(iree_hal_buffer_view_allocate_buffer_copy(
+      // IREE HAL device and allocator:
+      handle.getDevice(), iree_hal_device_allocator(handle.getDevice()),
+      // Shape rank and dimensions:
+      bufferShape.size(), bufferShape.data(),
+      // Element type:
+      getIreeHalElementTypeForT<T>(),
+      // Encoding type:
+      IREE_HAL_ENCODING_TYPE_DENSE_ROW_MAJOR,
+      (iree_hal_buffer_params_t){
+          // Intended usage of this buffer (transfers, dispatches, etc):
+          .usage = IREE_HAL_BUFFER_USAGE_DEFAULT,
+          // Access to allow to this memory:
+          .access = IREE_HAL_MEMORY_ACCESS_ALL,
+          // Where to allocate (host or device):
+          .type = IREE_HAL_MEMORY_TYPE_DEVICE_LOCAL,
+      },
+      // The actual heap buffer to wrap or clone and its allocator:
+      iree_make_const_byte_span(bufferData.data(),
+                                bufferData.size() * sizeof(T)),
+      // Buffer view + storage are returned and owned by the caller:
+      &rawBufferView));
+
+  return ok(Buffer(IreeHalBufferViewUniquePtrType(rawBufferView)));
+}
+
+// Reads device buffer by initiating a device-to-host transfer then
+// populating `outData`.
+template <typename T>
+inline ErrorObject Buffer::read(const FusilliHandle &handle,
+                                std::vector<T> &outData) {
+  FUSILLI_LOG_LABEL_ENDL(
+      "INFO: Reading device buffers (involves device-to-host transfer)");
+
+  // Resize output vector `outData` based on buffer size.
+  FUSILLI_RETURN_ERROR_IF(
+      outData.size() != 0, ErrorCode::RuntimeFailure,
+      "hostData isn't empty, can't proceed with Buffer::read");
+  iree_device_size_t byte_length =
+      iree_hal_buffer_view_byte_length(getBufferView());
+  outData.resize(byte_length / sizeof(T));
+
+  // Get the underlying buffer from the buffer view.
+  iree_hal_buffer_t *buffer = iree_hal_buffer_view_buffer(getBufferView());
+
+  // Copy results back from device.
+  FUSILLI_CHECK_ERROR(iree_hal_device_transfer_d2h(
+      handle.getDevice(), buffer, 0, outData.data(), byte_length,
+      IREE_HAL_TRANSFER_BUFFER_FLAG_DEFAULT, iree_infinite_timeout()));
 
   return ok();
 }
