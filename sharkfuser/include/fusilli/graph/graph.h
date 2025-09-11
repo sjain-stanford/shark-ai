@@ -97,6 +97,7 @@ public:
 
   // Executes the graph using IREE runtime. Requires a `variantPack` which is a
   // map from `TensorAttr` to `Buffer` wrapping the `iree_hal_buffer_view_t *`.
+  // Definition in `fusilli/backend/runtime.h`.
   ErrorObject
   execute(const std::unordered_map<std::shared_ptr<TensorAttr>,
                                    std::shared_ptr<Buffer>> &variantPack) const;
