@@ -12,10 +12,10 @@
 // Here's a rough mapping of Fusilli constructs to IREE runtime constructs
 // (based on scope and lifetime):
 //
-//  - Group of `FusilliHandle`s manage the IREE runtime instance lifetime.
+//  - Group of `Handle`s manage the IREE runtime instance lifetime.
 //    An instance is shared across handles/threads/sessions and released
 //    when the last handle goes out of scope.
-//  - `FusilliHandle` manages IREE HAL device lifetime. Handles may be shared
+//  - `Handle` manages IREE HAL device lifetime. Handles may be shared
 //    by multiple graphs (as long as they intend to run on the same device).
 //    Separate physical devices should have their own handles (hence logical
 //    HAL device) created. Graphs running on the same physical devices should
@@ -49,7 +49,7 @@ namespace fusilli {
 
 // Create static singleton IREE runtime instance shared across handles/threads.
 inline ErrorOr<IreeRuntimeInstanceSharedPtrType>
-FusilliHandle::createSharedInstance() {
+Handle::createSharedInstance() {
   // Mutex for thread-safe initialization of weakInstance
   static std::mutex instanceMutex;
 
@@ -96,7 +96,7 @@ FusilliHandle::createSharedInstance() {
 // TODO(#2151): This just creates the default device for now (which is like
 // a die roll when multiple GPUs are available). In the future we need to
 // allow specifying the exact device based on path or ID.
-inline ErrorObject FusilliHandle::createPerHandleDevice() {
+inline ErrorObject Handle::createPerHandleDevice() {
   FUSILLI_LOG_LABEL_ENDL("INFO: Creating per-handle IREE HAL device");
 
   iree_hal_device_t *rawDevice = nullptr;
@@ -112,7 +112,7 @@ inline ErrorObject FusilliHandle::createPerHandleDevice() {
 }
 
 // Create IREE runtime session for this graph and load the compiled artifact.
-inline ErrorObject Graph::createPerGraphSession(const FusilliHandle &handle,
+inline ErrorObject Graph::createPerGraphSession(const Handle &handle,
                                                 const std::string &vmfbPath) {
   // Create a session even if one was created earlier, since the handle
   // (hence device) might have changed and we might be re-compiling the graph
@@ -158,7 +158,7 @@ Buffer::import(iree_hal_buffer_view_t *externalBufferView) {
 // Factory: Allocates a new buffer view and takes ownership.
 template <typename T>
 inline ErrorOr<Buffer>
-Buffer::allocate(const FusilliHandle &handle,
+Buffer::allocate(const Handle &handle,
                  const std::vector<iree_hal_dim_t> &bufferShape,
                  const std::vector<T> &bufferData) {
   FUSILLI_LOG_LABEL_ENDL("INFO: Allocating new device buffer");
@@ -193,8 +193,7 @@ Buffer::allocate(const FusilliHandle &handle,
 // Reads device buffer by initiating a device-to-host transfer then
 // populating `outData`.
 template <typename T>
-inline ErrorObject Buffer::read(const FusilliHandle &handle,
-                                std::vector<T> &outData) {
+inline ErrorObject Buffer::read(const Handle &handle, std::vector<T> &outData) {
   FUSILLI_LOG_LABEL_ENDL(
       "INFO: Reading device buffers (involves device-to-host transfer)");
 

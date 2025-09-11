@@ -76,30 +76,30 @@ static const std::unordered_map<Backend, std::vector<std::string>>
 // Template specializations to map from primitive types
 // to IREE HAL element type.
 template <typename T> struct IreeHalElementType;
-
+//
 // float -> IREE_HAL_ELEMENT_TYPE_FLOAT_32
 template <> struct IreeHalElementType<float> {
   static constexpr iree_hal_element_type_t kType =
       IREE_HAL_ELEMENT_TYPE_FLOAT_32;
 };
-
+//
 // half -> IREE_HAL_ELEMENT_TYPE_FLOAT_16
 template <> struct IreeHalElementType<half> {
   static constexpr iree_hal_element_type_t kType =
       IREE_HAL_ELEMENT_TYPE_FLOAT_16;
 };
-
-// Assert for unsupported types.
+//
+// Assert for unsupported types:
 template <typename T> struct IreeHalElementType {
   static_assert(sizeof(T) == 0, "Unsupported type for IreeHalElementType");
 };
-
-// Usage
+//
+// Getter:
 template <typename T> iree_hal_element_type_t getIreeHalElementTypeForT() {
   return IreeHalElementType<T>::kType;
 }
 
-// Custom deleter for IREE runtime instance
+// Custom deleter for IREE runtime instance.
 struct IreeRuntimeInstanceDeleter {
   void operator()(iree_runtime_instance_t *instance) const {
     if (instance)
@@ -107,7 +107,7 @@ struct IreeRuntimeInstanceDeleter {
   }
 };
 
-// Custom deleter for IREE HAL device
+// Custom deleter for IREE HAL device.
 struct IreeHalDeviceDeleter {
   void operator()(iree_hal_device_t *device) const {
     if (device)
@@ -115,7 +115,7 @@ struct IreeHalDeviceDeleter {
   }
 };
 
-// Custom deleter for IREE runtime session
+// Custom deleter for IREE runtime session.
 struct IreeRuntimeSessionDeleter {
   void operator()(iree_runtime_session_t *session) const {
     if (session)
@@ -123,7 +123,7 @@ struct IreeRuntimeSessionDeleter {
   }
 };
 
-// Custom deleter for IREE HAL buffer view
+// Custom deleter for IREE HAL buffer view.
 struct IreeHalBufferViewDeleter {
   void operator()(iree_hal_buffer_view_t *bufferView) const {
     if (bufferView)
@@ -131,7 +131,7 @@ struct IreeHalBufferViewDeleter {
   }
 };
 
-// Aliases for IREE runtime types with custom deleters
+// Aliases for IREE runtime types with custom deleters.
 using IreeRuntimeInstanceSharedPtrType =
     std::shared_ptr<iree_runtime_instance_t>;
 using IreeHalDeviceUniquePtrType =

@@ -79,7 +79,7 @@ public:
   //
   // Set `remove = true` to remove compilation artifacts (cache files) when
   // this `Graph` instance goes out of scope.
-  ErrorObject compile(const FusilliHandle &handle, bool remove = false) {
+  ErrorObject compile(const Handle &handle, bool remove = false) {
     FUSILLI_LOG_LABEL_ENDL("INFO: Compiling Graph");
     FUSILLI_RETURN_ERROR_IF(!isValidated_, ErrorCode::NotValidated,
                             "Graph must be validated before being compiled");
@@ -216,9 +216,8 @@ public:
   // TODO(#2152): Make this private. It is public for now to aid testing and
   // debuggability, however the intended user facing API is `Graph::compile()`.
   ErrorOr<std::filesystem::path>
-  getCompiledArtifact(const FusilliHandle &handle,
-                      const std::string &generatedAsm, bool remove,
-                      std::optional<bool> *reCompiled = nullptr) {
+  getCompiledArtifact(const Handle &handle, const std::string &generatedAsm,
+                      bool remove, std::optional<bool> *reCompiled = nullptr) {
     // Check for cache hit.
     if (FUSILLI_TRY(validateCache(handle, generatedAsm))) {
       if (reCompiled)
@@ -234,11 +233,10 @@ public:
   }
 
 private:
-  ErrorObject createPerGraphSession(const FusilliHandle &handle,
+  ErrorObject createPerGraphSession(const Handle &handle,
                                     const std::string &vmfbPath);
 
-  std::string buildCompileCommand(const FusilliHandle &handle,
-                                  const CacheFile &input,
+  std::string buildCompileCommand(const Handle &handle, const CacheFile &input,
                                   const CacheFile &output) {
     std::vector<std::string> args = {IREE_COMPILE_PATH, input.path};
     auto &flags = backendFlags.at(handle.getBackend());
@@ -259,7 +257,7 @@ private:
   // `remove = true` to remove cache files when returned `CachedAssets` lifetime
   // ends.
   ErrorOr<CachedAssets>
-  generateCompiledArtifact(const FusilliHandle &handle,
+  generateCompiledArtifact(const Handle &handle,
                            const std::string &generatedAsm, bool remove) {
     FUSILLI_LOG_LABEL_ENDL("INFO: Generating compiled artifacts");
 
@@ -306,7 +304,7 @@ private:
   //  - Generated assembly differs
   //  - Compile commands have changed
   //  - Handle/backend (and therefore compile command) has changed
-  ErrorOr<bool> validateCache(const FusilliHandle &handle,
+  ErrorOr<bool> validateCache(const Handle &handle,
                               const std::string &generatedAsm) {
     FUSILLI_LOG_LABEL_ENDL("INFO: Validating cache");
 

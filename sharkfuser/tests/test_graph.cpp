@@ -147,11 +147,9 @@ TEST_CASE("Graph asm_emitter requires validation to be run first", "[graph]") {
 
 TEST_CASE("Graph `getCompiledArtifact` cache generation and invalidation",
           "[graph]") {
-  FusilliHandle cpuHandle =
-      FUSILLI_REQUIRE_UNWRAP(FusilliHandle::create(Backend::CPU));
+  Handle cpuHandle = FUSILLI_REQUIRE_UNWRAP(Handle::create(Backend::CPU));
 #ifdef FUSILLI_ENABLE_AMDGPU
-  FusilliHandle gpuHandle =
-      FUSILLI_REQUIRE_UNWRAP(FusilliHandle::create(Backend::GFX942));
+  Handle gpuHandle = FUSILLI_REQUIRE_UNWRAP(Handle::create(Backend::GFX942));
 #endif
 
   Graph g = testGraph(/*validate=*/true);
@@ -214,8 +212,7 @@ TEST_CASE("Graph `getCompiledArtifact` cache generation and invalidation",
 TEST_CASE("Graph `getCompiledArtifact` should not read cached items from "
           "other/previous Graph instances",
           "[graph]") {
-  FusilliHandle handle =
-      FUSILLI_REQUIRE_UNWRAP(FusilliHandle::create(Backend::CPU));
+  Handle handle = FUSILLI_REQUIRE_UNWRAP(Handle::create(Backend::CPU));
 
   std::string generatedAsm;
   {
@@ -254,8 +251,7 @@ TEST_CASE("Graph `getCompiledArtifact` should not read cached items from "
 }
 
 TEST_CASE("Graph `getCompiledArtifact` invalid input IR", "[graph]") {
-  FusilliHandle handle =
-      FUSILLI_REQUIRE_UNWRAP(FusilliHandle::create(Backend::CPU));
+  Handle handle = FUSILLI_REQUIRE_UNWRAP(Handle::create(Backend::CPU));
   std::string graphName;
   {
     Graph g;
@@ -272,8 +268,7 @@ TEST_CASE("Graph `getCompiledArtifact` invalid input IR", "[graph]") {
 }
 
 TEST_CASE("Graph `compile` method fails without validation", "[graph]") {
-  FusilliHandle handle =
-      FUSILLI_REQUIRE_UNWRAP(FusilliHandle::create(Backend::CPU));
+  Handle handle = FUSILLI_REQUIRE_UNWRAP(Handle::create(Backend::CPU));
 
   Graph g = testGraph(/*validate=*/false);
 
@@ -299,8 +294,7 @@ TEST_CASE("Graph `compile` recompilations with changed handle", "[graph]") {
                                   "fusilli" / g.getName() /
                                   "iree-compile-command.txt";
 
-  FusilliHandle cpuHandle =
-      FUSILLI_REQUIRE_UNWRAP(FusilliHandle::create(Backend::CPU));
+  Handle cpuHandle = FUSILLI_REQUIRE_UNWRAP(Handle::create(Backend::CPU));
   REQUIRE(isOk(g.compile(cpuHandle, /*remove=*/true)));
 
   std::string cpuCmd;
@@ -311,8 +305,7 @@ TEST_CASE("Graph `compile` recompilations with changed handle", "[graph]") {
   REQUIRE(!cpuCmd.empty());
 
 #ifdef FUSILLI_ENABLE_AMDGPU
-  FusilliHandle gpuHandle =
-      FUSILLI_REQUIRE_UNWRAP(FusilliHandle::create(Backend::GFX942));
+  Handle gpuHandle = FUSILLI_REQUIRE_UNWRAP(Handle::create(Backend::GFX942));
   REQUIRE(isOk(g.compile(gpuHandle, /*remove=*/true)));
 
   std::string gpuCmd;

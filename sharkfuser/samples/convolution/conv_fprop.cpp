@@ -19,7 +19,7 @@ using namespace fusilli;
 TEST_CASE("Convolution fprop", "[conv][graph]") {
   int64_t n = 16, c = 128, h = 64, w = 64, k = 256, r = 1, s = 1;
 
-  auto build_new_graph = [=](const FusilliHandle &handle) {
+  auto build_new_graph = [=](const Handle &handle) {
     auto graph = std::make_shared<Graph>();
     graph->setName("fprop_sample");
     graph->setIODataType(DataType::Half).setComputeDataType(DataType::Float);
@@ -54,18 +54,18 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
   };
 
   // Parameterize sample by backend and create device-specific handles
-  std::optional<ErrorOr<FusilliHandle>> handleOrError;
+  std::optional<ErrorOr<Handle>> handleOrError;
   SECTION("cpu backend") {
-    handleOrError.emplace(FusilliHandle::create(Backend::CPU));
+    handleOrError.emplace(Handle::create(Backend::CPU));
   }
 #ifdef FUSILLI_ENABLE_AMDGPU
   SECTION("gfx942 backend") {
-    handleOrError.emplace(FusilliHandle::create(Backend::GFX942));
+    handleOrError.emplace(Handle::create(Backend::GFX942));
   }
 #endif
   REQUIRE(handleOrError.has_value());
   REQUIRE(isOk(*handleOrError));
-  FusilliHandle &handle = **handleOrError;
+  Handle &handle = **handleOrError;
 
   // Build graph for the given handle (device), validate and compile it.
   auto [graph, X, W, Y] = build_new_graph(handle);

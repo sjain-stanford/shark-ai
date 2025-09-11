@@ -15,9 +15,9 @@
 
 namespace fusilli {
 
-// Half precision floating point from Clang extensions
+// Half precision floating point from Clang extensions.
 // https://clang.llvm.org/docs/LanguageExtensions.html#half-precision-floating-point
-// TODO: Switch to `std::float16_t` from <stdfloat> (C++23)
+// TODO: Switch to `std::float16_t` from <stdfloat> (C++23).
 // https://en.cppreference.com/w/cpp/types/floating-point.html
 using half = _Float16;
 

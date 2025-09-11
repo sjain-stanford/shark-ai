@@ -35,14 +35,13 @@ public:
   // Definition in `fusilli/backend/runtime.h`.
   template <typename T>
   static ErrorOr<Buffer>
-  allocate(const FusilliHandle &handle,
-           const std::vector<iree_hal_dim_t> &bufferShape,
+  allocate(const Handle &handle, const std::vector<iree_hal_dim_t> &bufferShape,
            const std::vector<T> &bufferData);
 
   // Reads device buffer by initiating a device-to-host transfer then
   // populating `outData`. Definition in `fusilli/backend/runtime.h`.
   template <typename T>
-  ErrorObject read(const FusilliHandle &handle, std::vector<T> &outData);
+  ErrorObject read(const Handle &handle, std::vector<T> &outData);
 
   // Allow creating empty (nullptr) initialized Buffer which is
   // useful for creating placeholder output buffers that are
@@ -58,8 +57,8 @@ public:
     bufferView_.reset(newBufferView);
   }
 
-  // Automatic (implicit) conversion operator for Buffer ->
-  // iree_hal_buffer_view_t*
+  // Automatic (implicit) conversion operator for
+  // `Buffer` -> `iree_hal_buffer_view_t *`
   operator iree_hal_buffer_view_t *() const { return getBufferView(); }
 
   // Delete copy constructors, keep default move constructor and destructor
