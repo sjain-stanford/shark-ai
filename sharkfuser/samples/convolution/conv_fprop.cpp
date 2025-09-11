@@ -75,11 +75,11 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
       Buffer::allocate(handle,
                        /*shape=*/castToSizeT({n, c, h, w}),
                        /*data=*/std::vector<half>(n * c * h * w, half(1.0f)))));
-  // xBuf is a shared_ptr<Buffer>.
-  // *xBuf is the Buffer object after de-referencing.
-  // The implicit cast from `Buffer` -> `iree_hal_buffer_view_t *` makes the
-  // `*xBuf != nullptr` check on the underlying raw `iree_hal_buffer_view_t *`
-  // which is what we want.
+  // xBuf is a shared_ptr<Buffer> and *xBuf is the de-referenced Buffer obj.
+  // Hence checking `*xBuf != nullptr` might seem weird at first, but due to
+  // the implicit automatic cast from `Buffer` -> `iree_hal_buffer_view_t *`,
+  // `*xBuf != nullptr` simply checks that the underlying raw
+  // `iree_hal_buffer_view_t *` is not NULL which is what we expect.
   REQUIRE(*xBuf != nullptr);
 
   // Allocate weight buffer
@@ -101,17 +101,15 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
           {Y, yBuf},
       };
 
-  for (size_t i = 0; i < 10; i++) {
-    // Execute graph
-    REQUIRE(isOk(graph->execute(variantPack)));
-    REQUIRE(*yBuf != nullptr);
-  }
+  // Execute graph
+  REQUIRE(isOk(graph->execute(variantPack)));
+  REQUIRE(*yBuf != nullptr);
 
   // Make sure input/weight buffers are held until `xBuf` and `yBuf` are alive.
-  // If `Graph::execute` were to release them (via
-  // `iree_hal_buffer_view_release`) right after the call to
-  // `iree_runtime_call_inputs_push_back_buffer_view` then this would seg-fault
-  // with a use-after-free, so this test guards against that.
+  // If `Graph::execute` were to release them (via iree_hal_buffer_view_release)
+  // right after the call to iree_runtime_call_inputs_push_back_buffer_view,
+  // this would seg-fault with a use-after-free so this test guards against
+  // that.
   std::vector<half> input;
   REQUIRE(isOk(xBuf->read(handle, input)));
   for (auto val : input) {
@@ -123,6 +121,29 @@ TEST_CASE("Convolution fprop", "[conv][graph]") {
     REQUIRE(val == half(1.0f));
   }
   std::vector<half> result;
+  REQUIRE(isOk(yBuf->read(handle, result)));
+  for (auto val : result) {
+    REQUIRE(val == half(128.0f));
+  }
+
+  // Execute graph several times
+  for (size_t i = 0; i < 10; i++) {
+    REQUIRE(isOk(graph->execute(variantPack)));
+    REQUIRE(*yBuf != nullptr);
+  }
+
+  // Repeat buffer checks
+  input.clear();
+  REQUIRE(isOk(xBuf->read(handle, input)));
+  for (auto val : input) {
+    REQUIRE(val == half(1.0f));
+  }
+  weight.clear();
+  REQUIRE(isOk(wBuf->read(handle, weight)));
+  for (auto val : weight) {
+    REQUIRE(val == half(1.0f));
+  }
+  result.clear();
   REQUIRE(isOk(yBuf->read(handle, result)));
   for (auto val : result) {
     REQUIRE(val == half(128.0f));

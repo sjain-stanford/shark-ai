@@ -244,8 +244,7 @@ Buffer::allocate(const Handle &handle,
 // populating `outData`.
 template <typename T>
 inline ErrorObject Buffer::read(const Handle &handle, std::vector<T> &outData) {
-  FUSILLI_LOG_LABEL_ENDL(
-      "INFO: Reading device buffers (involves device-to-host transfer)");
+  FUSILLI_LOG_LABEL_ENDL("INFO: Reading device buffer through D2H transfer)");
   FUSILLI_RETURN_ERROR_IF(
       outData.size() != 0, ErrorCode::RuntimeFailure,
       "Can't proceed with Buffer::read as hostData is NOT empty");
