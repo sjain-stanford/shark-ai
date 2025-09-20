@@ -16,7 +16,7 @@
 using namespace fusilli;
 
 int main() {
-  int64_t n = 16, c = 128, h = 64, w = 64, k = 256, r = 1, s = 1;
+  int64_t n = 16, c = 128, h = 64, w = 32, k = 256, r = 1, s = 1;
   auto graph = std::make_shared<Graph>();
   graph->setName("conv_nhwc_asm_emitter_test");
   graph->setIODataType(DataType::Float).setComputeDataType(DataType::Float);
@@ -43,7 +43,7 @@ int main() {
 
   // clang-format off
   // CHECK:   module @module {
-  // CHECK:     func.func @main(%result_: !torch.tensor<[16,64,64,256],f32>, %arg0_image: !torch.vtensor<[16,64,64,128],f32>, %arg1_filter: !torch.vtensor<[256,1,1,128],f32>) attributes {torch.assume_strict_symbolic_shapes} {
+  // CHECK:     func.func @main(%result_: !torch.tensor<[16,64,32,256],f32>, %arg0_image: !torch.vtensor<[16,64,32,128],f32>, %arg1_filter: !torch.vtensor<[256,1,1,128],f32>) attributes {torch.assume_strict_symbolic_shapes} {
   // CHECK:       %bias_conv_fprop = torch.constant.none
   // CHECK:       %stride_val_0_conv_fprop = torch.constant.int 1
   // CHECK:       %stride_val_1_conv_fprop = torch.constant.int 1
@@ -57,8 +57,8 @@ int main() {
   // CHECK:       %transposed_conv_fprop = torch.constant.bool false
   // CHECK:       %output_padding_conv_fprop = torch.prim.ListConstruct  : () -> !torch.list<int>
   // CHECK:       %groups_conv_fprop = torch.constant.int 1
-  // CHECK:       %result = torch.aten.convolution %arg0_image, %arg1_filter, %bias_conv_fprop, %stride_conv_fprop, %padding_conv_fprop, %dilation_conv_fprop, %transposed_conv_fprop, %output_padding_conv_fprop, %groups_conv_fprop : !torch.vtensor<[16,64,64,128],f32>, !torch.vtensor<[256,1,1,128],f32>, !torch.none, !torch.list<int>, !torch.list<int>, !torch.list<int>, !torch.bool, !torch.list<int>, !torch.int -> !torch.vtensor<[16,64,64,256],f32>
-  // CHECK:       torch.overwrite.tensor.contents %result overwrites %result_ : !torch.vtensor<[16,64,64,256],f32>, !torch.tensor<[16,64,64,256],f32>
+  // CHECK:       %result = torch.aten.convolution %arg0_image, %arg1_filter, %bias_conv_fprop, %stride_conv_fprop, %padding_conv_fprop, %dilation_conv_fprop, %transposed_conv_fprop, %output_padding_conv_fprop, %groups_conv_fprop : !torch.vtensor<[16,64,32,128],f32>, !torch.vtensor<[256,1,1,128],f32>, !torch.none, !torch.list<int>, !torch.list<int>, !torch.list<int>, !torch.bool, !torch.list<int>, !torch.int -> !torch.vtensor<[16,64,32,256],f32>
+  // CHECK:       torch.overwrite.tensor.contents %result overwrites %result_ : !torch.vtensor<[16,64,32,256],f32>, !torch.tensor<[16,64,32,256],f32>
   // CHECK:       return
   // CHECK:     }
   // CHECK:   }
