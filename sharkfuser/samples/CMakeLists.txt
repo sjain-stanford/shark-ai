@@ -22,3 +22,12 @@ add_fusilli_sample(
   DEPS
     iree_runtime_unified
 )
+
+add_fusilli_sample(
+  NAME fusilli_benchmark_samples
+  SRCS
+    convolution/conv_fprop_benchmark.cpp
+  DEPS
+    libfusilli
+    libutils
+)
