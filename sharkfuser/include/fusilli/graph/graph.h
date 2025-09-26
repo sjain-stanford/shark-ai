@@ -175,14 +175,14 @@ public:
     if (FUSILLI_TRY(validateCache(handle, generatedAsm))) {
       if (reCompiled)
         *reCompiled = false;
-      return cache_->output.path;
+      return ok(cache_->output.path);
     }
     // (Re)generate cache.
     cache_ =
         FUSILLI_TRY(generateCompiledArtifact(handle, generatedAsm, remove));
     if (reCompiled)
       *reCompiled = true;
-    return cache_->output.path;
+    return ok(cache_->output.path);
   }
 
 private:
