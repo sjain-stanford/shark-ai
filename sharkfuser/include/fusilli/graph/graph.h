@@ -38,6 +38,7 @@
 #define IREE_COMPILE_INPUT_FILENAME "iree-compile-input.mlir"
 #define IREE_COMPILE_OUTPUT_FILENAME "iree-compile-output.vmfb"
 #define IREE_COMPILE_COMMAND_FILENAME "iree-compile-command.txt"
+#define IREE_COMPILE_STATISTICS_FILENAME "iree-compile-statistics.json"
 
 namespace fusilli {
 
@@ -190,12 +191,16 @@ private:
                                     const std::string &vmfbPath);
 
   std::string buildCompileCommand(const Handle &handle, const CacheFile &input,
-                                  const CacheFile &output) {
+                                  const CacheFile &output,
+                                  const CacheFile &statistics) {
     std::vector<std::string> args = {IREE_COMPILE_PATH, input.path};
     auto &flags = backendFlags.at(handle.getBackend());
     args.insert(args.end(), flags.begin(), flags.end());
     args.push_back("-o");
     args.push_back(output.path);
+    args.push_back("--iree-scheduling-dump-statistics-format=json");
+    args.push_back("--iree-scheduling-dump-statistics-file=" +
+                   statistics.path.string());
     std::ostringstream cmdss;
     interleave(
         args.begin(), args.end(),
@@ -230,14 +235,20 @@ private:
         FUSILLI_TRY(CacheFile::create(
             /*graphName=*/getName(),
             /*fileName=*/IREE_COMPILE_COMMAND_FILENAME,
+            /*remove=*/remove)),
+        /*stat=*/
+        FUSILLI_TRY(CacheFile::create(
+            /*graphName=*/getName(),
+            /*fileName=*/IREE_COMPILE_STATISTICS_FILENAME,
             /*remove=*/remove)));
 
     // Write input asm to cache.
     FUSILLI_CHECK_ERROR(cache.input.write(generatedAsm));
 
     // Build + cache + log compile command.
-    std::string cmd = buildCompileCommand(handle, cache.input, cache.output);
-    FUSILLI_CHECK_ERROR(cache.compileCommand.write(cmd));
+    std::string cmd = buildCompileCommand(handle, cache.input, cache.output,
+                                          cache.statistics);
+    FUSILLI_CHECK_ERROR(cache.command.write(cmd));
     FUSILLI_LOG_LABEL_ENDL("INFO: iree-compile command");
     FUSILLI_LOG_ENDL(cmd);
 
@@ -280,11 +291,18 @@ private:
       FUSILLI_LOG_ENDL("Cache output paths differ.");
       return ok(false);
     }
-    if (cache_->compileCommand.path !=
+    if (cache_->command.path !=
         CacheFile::getPath(
             /*graphName=*/getName(),
             /*fileName=*/IREE_COMPILE_COMMAND_FILENAME)) {
       FUSILLI_LOG_ENDL("Cache compile command paths differ.");
+      return ok(false);
+    }
+    if (cache_->statistics.path !=
+        CacheFile::getPath(
+            /*graphName=*/getName(),
+            /*fileName=*/IREE_COMPILE_STATISTICS_FILENAME)) {
+      FUSILLI_LOG_ENDL("Cache compile statistics paths differ.");
       return ok(false);
     }
 
@@ -295,9 +313,12 @@ private:
     CacheFile output = FUSILLI_TRY(CacheFile::open(
         /*graphName=*/getName(),
         /*fileName=*/IREE_COMPILE_OUTPUT_FILENAME));
-    CacheFile compileCommand = FUSILLI_TRY(CacheFile::open(
+    CacheFile command = FUSILLI_TRY(CacheFile::open(
         /*graphName=*/getName(),
         /*fileName=*/IREE_COMPILE_COMMAND_FILENAME));
+    CacheFile statistics = FUSILLI_TRY(CacheFile::open(
+        /*graphName=*/getName(),
+        /*fileName=*/IREE_COMPILE_STATISTICS_FILENAME));
 
     // Check for a cache miss on generated assembly.
     if (FUSILLI_TRY(input.read()) != generatedAsm) {
@@ -306,8 +327,8 @@ private:
     }
 
     // Check for a cache miss on compile command.
-    std::string cmd = buildCompileCommand(handle, input, output);
-    if (FUSILLI_TRY(compileCommand.read()) != cmd) {
+    std::string cmd = buildCompileCommand(handle, input, output, statistics);
+    if (FUSILLI_TRY(command.read()) != cmd) {
       FUSILLI_LOG_ENDL("Compile command does not match");
       return ok(false);
     }
