@@ -241,6 +241,13 @@ struct CleanupCacheDirectory {
   }
 };
 
+enum class CachedAssetsType {
+  Input,
+  Output,
+  Command,
+  Statistics,
+};
+
 // Holds cached assets. If `CacheFiles` are set to be removed RAII based removal
 // will be tied to the lifetime of this object.
 struct CachedAssets : CleanupCacheDirectory {

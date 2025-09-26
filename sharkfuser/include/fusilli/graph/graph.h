@@ -155,7 +155,7 @@ public:
     std::ostringstream oss;
     emitAsmSubtree(oss);
     FUSILLI_LOG_ENDL(oss.str());
-    return oss.str();
+    return ok(oss.str());
   }
 
   // Return compiled artifact. The first invocation will always generate
@@ -183,6 +183,28 @@ public:
     if (reCompiled)
       *reCompiled = true;
     return ok(cache_->output.path);
+  }
+
+  ErrorOr<std::string> readCompilationCacheFile(CachedAssetsType type) {
+    FUSILLI_LOG_LABEL_ENDL("INFO: Getting cached assets path");
+    FUSILLI_RETURN_ERROR_IF(!cache_.has_value(), ErrorCode::FileSystemFailure,
+                            "Cache not populated yet");
+
+    // `CacheFile::read` already returns an `ErrorOr<std::string>`
+    // so don't wrap it in another `ok()` here.
+    switch (type) {
+    case CachedAssetsType::Input:
+      return cache_->input.read();
+    case CachedAssetsType::Command:
+      return cache_->command.read();
+    case CachedAssetsType::Output:
+      return cache_->output.read();
+    case CachedAssetsType::Statistics:
+      return cache_->statistics.read();
+    default:
+      FUSILLI_RETURN_ERROR_IF(true, ErrorCode::InvalidAttribute,
+                              "Unknown CachedAssetsType");
+    }
   }
 
 private:

@@ -95,10 +95,16 @@ ErrorObject test_conv_asm_emitter_x_nchw_w_kcrs_with_pad() {
   FUSILLI_CHECK_ERROR(graph->validate());
   std::cout << FUSILLI_TRY(graph->emitAsm()) << std::endl;
 
-#ifdef FUSILLI_ENABLE_AMDGPU
-  Handle handle = FUSILLI_REQUIRE_UNWRAP(Handle::create(Backend::GFX942));
+  Handle handle = FUSILLI_TRY(Handle::create(Backend::CPU));
   FUSILLI_CHECK_ERROR(graph->compile(handle, /*remove=*/true));
+  std::cout << FUSILLI_TRY(
+      graph->readCompilationCacheFile(CachedAssetsType::Statistics));
 
+#ifdef FUSILLI_ENABLE_AMDGPU
+  Handle handle = FUSILLI_TRY(Handle::create(Backend::GFX942));
+  FUSILLI_CHECK_ERROR(graph->compile(handle, /*remove=*/true));
+  std::cout << FUSILLI_TRY(
+      graph->readCompilationCacheFile(CachedAssetsType::Statistics));
 #endif
 
   return ok();
