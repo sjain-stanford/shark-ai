@@ -202,8 +202,7 @@ public:
     case CachedAssetsType::Statistics:
       return cache_->statistics.read();
     default:
-      FUSILLI_RETURN_ERROR_IF(true, ErrorCode::InvalidAttribute,
-                              "Unknown CachedAssetsType");
+      return error(ErrorCode::InvalidAttribute, "Unknown CachedAssetsType");
     }
   }
 
