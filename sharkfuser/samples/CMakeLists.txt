@@ -24,9 +24,9 @@ add_fusilli_sample(
 )
 
 add_fusilli_sample(
-  NAME fusilli_benchmark_samples
+  NAME conv_fprop_benchmark_driver
   SRCS
-    convolution/conv_fprop_benchmark.cpp
+    convolution/conv_fprop_benchmark_driver.cpp
   DEPS
     libfusilli
     libutils
