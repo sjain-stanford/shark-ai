@@ -196,11 +196,11 @@ private:
     std::vector<std::string> args = {IREE_COMPILE_PATH, input.path};
     auto &flags = backendFlags.at(handle.getBackend());
     args.insert(args.end(), flags.begin(), flags.end());
-    args.push_back("-o");
-    args.push_back(output.path);
     args.push_back("--iree-scheduling-dump-statistics-format=json");
     args.push_back("--iree-scheduling-dump-statistics-file=" +
                    statistics.path.string());
+    args.push_back("-o");
+    args.push_back(output.path);
     std::ostringstream cmdss;
     interleave(
         args.begin(), args.end(),
