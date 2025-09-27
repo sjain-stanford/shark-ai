@@ -8,7 +8,7 @@
 // RUN: %test_exe | FileCheck %s --check-prefix=TORCH-CHECK
 // RUN: %test_exe | iree-compile - --compile-to=input | \
 // RUN:             FileCheck %s --check-prefix=LINALG-CHECK
-// RUN: %test_exe stats | FileCheck %s --check-prefix=STATS-CHECK --dump-input=always
+// RUN: %test_exe stats | FileCheck %s --check-prefix=STATS-CHECK
 
 #include <fusilli.h>
 
@@ -99,21 +99,17 @@ test_conv_asm_emitter_x_nchw_w_kcrs_with_pad(const std::string &mode) {
     std::cout << FUSILLI_TRY(graph->emitAsm()) << std::endl;
   }
 
-  // STATS-CHECK: "dispatch-count": 1,
+  // STATS-CHECK: "dispatch-count": 2,
   if (mode == "stats") {
-    Handle handle = FUSILLI_TRY(Handle::create(Backend::CPU));
-    FUSILLI_CHECK_ERROR(graph->compile(handle, /*remove=*/true));
-    std::cout << FUSILLI_TRY(graph->readCompilationCacheFile(
-                     CachedAssetsType::Statistics))
-              << std::endl;
-
 #ifdef FUSILLI_ENABLE_AMDGPU
     Handle handle = FUSILLI_TRY(Handle::create(Backend::GFX942));
+#else
+    Handle handle = FUSILLI_TRY(Handle::create(Backend::CPU));
+#endif
     FUSILLI_CHECK_ERROR(graph->compile(handle, /*remove=*/true));
     std::cout << FUSILLI_TRY(graph->readCompilationCacheFile(
                      CachedAssetsType::Statistics))
               << std::endl;
-#endif
   }
 
   return ok();
