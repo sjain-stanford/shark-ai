@@ -16,6 +16,16 @@ add_fusilli_sample(
 )
 
 add_fusilli_sample(
+  NAME fusilli_benchmark_samples
+  SRCS
+    convolution/conv_benchmark.cpp
+  DEPS
+    libfusilli
+    libutils
+)
+
+
+add_fusilli_sample(
   NAME fusilli_runtime_capi_samples
   SRCS
     runtime/runtime_api.c
