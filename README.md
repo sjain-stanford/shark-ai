@@ -25,7 +25,7 @@
 | sharktank/sharktank/kernels/conv\_2d\_nchw\_fchw.py                           |       64 |        0 |    100% |           |
 | sharktank/sharktank/kernels/einsum\_2args\_q4.py                              |      122 |        2 |     98% |   69, 179 |
 | sharktank/sharktank/kernels/gemm\_fp4.py                                      |       17 |        0 |    100% |           |
-| sharktank/sharktank/kernels/gemm\_fp4\_asm.py                                 |       47 |       23 |     51% |31-47, 67-188, 202, 216, 235-241 |
+| sharktank/sharktank/kernels/gemm\_fp4\_asm.py                                 |       37 |       18 |     51% |29-45, 64-182, 195 |
 | sharktank/sharktank/kernels/mlir\_kernel.py                                   |      204 |       18 |     91% |40, 43, 47, 112, 123, 129, 131, 220, 262, 269, 277, 321, 329, 369-374, 382 |
 | sharktank/sharktank/kernels/mmt\_block\_scaled\_offset\_q4.py                 |       50 |        3 |     94% |     94-96 |
 | sharktank/sharktank/kernels/mmt\_block\_scaled\_q8.py                         |       38 |        0 |    100% |           |
@@ -45,19 +45,19 @@
 | sharktank/sharktank/layers/causal\_llm.py                                     |       22 |        7 |     68% |     58-64 |
 | sharktank/sharktank/layers/configs/\_\_init\_\_.py                            |        2 |        0 |    100% |           |
 | sharktank/sharktank/layers/configs/config.py                                  |      170 |       15 |     91% |139, 196, 205-211, 219, 234, 248-254, 267, 269, 289, 313 |
-| sharktank/sharktank/layers/configs/llm\_configs.py                            |      559 |      162 |     71% |44-46, 236, 238, 240, 242, 244, 246, 248, 254, 256, 258, 260, 268, 272, 276, 283, 285, 289, 291, 294, 296, 298, 302, 304, 306, 317, 320, 323-326, 329-349, 352-359, 364-387, 395-398, 404-407, 411-416, 430-431, 442-443, 454-455, 485, 516-520, 524, 530, 535, 553, 616, 648-649, 654, 708-722, 726-729, 737-769, 813, 819-827, 836-848, 887, 909, 933-937, 973-976, 980-984 |
+| sharktank/sharktank/layers/configs/llm\_configs.py                            |      558 |      162 |     71% |44-46, 236, 238, 240, 242, 244, 246, 248, 254, 256, 258, 260, 268, 272, 276, 283, 285, 289, 291, 294, 296, 298, 302, 304, 306, 317, 320, 323-326, 329-349, 352-359, 364-387, 395-398, 404-407, 411-416, 430-431, 442-443, 454-455, 485, 516-520, 524, 530, 535, 553, 613, 645-646, 651, 705-719, 723-726, 734-766, 810, 816-824, 833-845, 884, 906, 930-934, 970-973, 977-981 |
 | sharktank/sharktank/layers/conv.py                                            |      100 |       61 |     39% |48, 58, 61, 63, 80, 95-110, 113-143, 157-172, 175-205 |
 | sharktank/sharktank/layers/ffn\_block.py                                      |       26 |        0 |    100% |           |
 | sharktank/sharktank/layers/ffn\_moe\_block.py                                 |      105 |       29 |     72% |73-76, 79-87, 252-286, 292-295, 302-308 |
 | sharktank/sharktank/layers/kv\_cache.py                                       |       16 |        0 |    100% |           |
 | sharktank/sharktank/layers/latent\_attention\_block.py                        |       52 |        5 |     90% |42, 61, 66, 76, 96 |
 | sharktank/sharktank/layers/linear.py                                          |       43 |        4 |     91% |55, 66, 74, 84 |
-| sharktank/sharktank/layers/mixture\_of\_experts\_block.py                     |       86 |        6 |     93% |51, 55, 63, 98, 118, 225 |
+| sharktank/sharktank/layers/mixture\_of\_experts\_block.py                     |       86 |        6 |     93% |51, 55, 63, 98, 118, 227 |
 | sharktank/sharktank/layers/mmdit.py                                           |      103 |        0 |    100% |           |
 | sharktank/sharktank/layers/modulation.py                                      |       21 |        0 |    100% |           |
 | sharktank/sharktank/layers/norm.py                                            |       37 |        0 |    100% |           |
 | sharktank/sharktank/layers/paged\_attention.py                                |      274 |       15 |     95% |202, 356, 360-363, 367, 387, 389, 427, 767-772, 931 |
-| sharktank/sharktank/layers/paged\_llama\_attention\_block.py                  |      167 |       26 |     84% |93-97, 121-122, 156, 183-200, 339-348, 380, 382, 384, 512-514 |
+| sharktank/sharktank/layers/paged\_llama\_attention\_block.py                  |      167 |       26 |     84% |93-97, 121-122, 156, 183-203, 342-351, 383, 385, 387, 515-517 |
 | sharktank/sharktank/layers/rotary\_embedding.py                               |       35 |        0 |    100% |           |
 | sharktank/sharktank/layers/rotary\_embedding\_hf.py                           |      121 |        3 |     98% |104, 252-253 |
 | sharktank/sharktank/layers/testing.py                                         |       44 |        1 |     98% |       302 |
@@ -80,7 +80,7 @@
 | sharktank/sharktank/models/flux/testing.py                                    |       54 |       10 |     81% |31, 154, 209-227 |
 | sharktank/sharktank/models/grok/testing.py                                    |       22 |        0 |    100% |           |
 | sharktank/sharktank/models/grok/toy\_grok.py                                  |       31 |        6 |     81% | 67-72, 76 |
-| sharktank/sharktank/models/llama4/testing.py                                  |       40 |        1 |     98% |        17 |
+| sharktank/sharktank/models/llama4/testing.py                                  |       41 |        1 |     98% |        18 |
 | sharktank/sharktank/models/llama/testing.py                                   |       58 |        0 |    100% |           |
 | sharktank/sharktank/models/llama/toy\_llama.py                                |       51 |        6 |     88% |156-162, 166 |
 | sharktank/sharktank/models/llm/\_\_init\_\_.py                                |        1 |        0 |    100% |           |
@@ -108,17 +108,17 @@
 | sharktank/sharktank/ops/\_registry.py                                         |      218 |       15 |     93% |52, 142, 147, 277-280, 292, 329, 332-335, 348, 466, 488, 496, 543 |
 | sharktank/sharktank/ops/attention\_impls.py                                   |      156 |       41 |     74% |49-51, 81, 154-156, 165, 182, 239, 255-302 |
 | sharktank/sharktank/ops/cpu\_impls.py                                         |       20 |        1 |     95% |        43 |
-| sharktank/sharktank/ops/custom\_impls.py                                      |      128 |       49 |     62% |66-70, 88, 104, 125-134, 151-170, 192-216, 246, 250-253, 276, 278, 280 |
-| sharktank/sharktank/ops/default\_impls.py                                     |      600 |      102 |     83% |54, 196-211, 240, 242, 274, 276, 278, 311, 313, 315, 339-346, 351-359, 364-370, 375-383, 388-395, 401-415, 447, 449, 463-464, 529, 536-544, 551, 569, 579, 761, 780, 791-793, 832, 938, 1009, 1014, 1019, 1025, 1164, 1168, 1233-1236, 1241, 1246 |
+| sharktank/sharktank/ops/custom\_impls.py                                      |      122 |       47 |     61% |66-70, 88, 104, 125-134, 151-170, 200-220, 229, 233-236, 259, 261, 263 |
+| sharktank/sharktank/ops/default\_impls.py                                     |      619 |      104 |     83% |60, 202-217, 246, 248, 280, 282, 284, 317, 319, 321, 345-352, 357-365, 370-376, 381-389, 394-401, 407-421, 453, 455, 469-470, 535, 542-550, 557, 575, 585, 772, 783, 814, 825-827, 866, 972, 1043, 1048, 1053, 1059, 1198, 1202, 1267-1270, 1275, 1280, 1291 |
 | sharktank/sharktank/ops/qconv\_impls.py                                       |      123 |       31 |     75% |47, 53, 67-71, 88, 94, 109, 137-142, 168-177, 229, 252, 270-285, 298, 303, 310 |
 | sharktank/sharktank/ops/qlinear\_impls.py                                     |       91 |       16 |     82% |41, 72, 91, 95, 109-112, 123-124, 150-151, 170, 173, 196-198, 217 |
 | sharktank/sharktank/ops/quantized\_impls.py                                   |      233 |       36 |     85% |81, 89, 91-97, 99-106, 117-118, 142, 255-257, 394, 485-489, 504-525 |
 | sharktank/sharktank/ops/shape.py                                              |       28 |        1 |     96% |        84 |
-| sharktank/sharktank/ops/sharded\_impls.py                                     |      889 |       83 |     91% |243, 465, 527-529, 536, 544, 559, 569-573, 583-588, 603-604, 674-683, 733-741, 885, 928, 980, 994, 996, 999, 1004, 1007, 1073-1075, 1129-1133, 1146, 1163, 1172, 1180-1182, 1208, 1224, 1234, 1258, 1284, 1286, 1296, 1298, 1363, 1413, 1520, 1550, 1555, 1752, 1762-1772, 1953-1954, 1978, 2041, 2050-2055, 2067, 2071, 2111-2112, 2117-2118 |
-| sharktank/sharktank/ops/signatures.py                                         |      336 |       42 |     88% |135, 152, 225, 251, 296, 329, 348, 366, 381, 400, 418, 433, 473, 489, 495, 511, 524, 566-572, 593, 646, 654, 687, 721, 734, 759, 786, 807, 830, 861, 891, 928, 946, 962, 1018, 1061, 1119, 1273 |
+| sharktank/sharktank/ops/sharded\_impls.py                                     |      905 |       83 |     91% |228, 466, 528-530, 537, 545, 560, 570-574, 584-589, 604-605, 675-684, 734-742, 886, 929, 981, 995, 997, 1000, 1005, 1008, 1074-1076, 1159-1163, 1176, 1193, 1202, 1210-1212, 1238, 1254, 1264, 1288, 1314, 1316, 1326, 1328, 1393, 1443, 1550, 1580, 1585, 1782, 1792-1802, 1983-1984, 2008, 2071, 2080-2085, 2097, 2101, 2141-2142, 2147-2148 |
+| sharktank/sharktank/ops/signatures.py                                         |      346 |       42 |     88% |146, 163, 237, 263, 308, 341, 360, 378, 393, 412, 430, 445, 485, 501, 507, 523, 536, 578-584, 605, 658, 666, 699, 733, 746, 771, 804, 825, 848, 879, 935, 972, 990, 1006, 1062, 1105, 1163, 1317 |
 | sharktank/sharktank/ops/utils.py                                              |       86 |        4 |     95% |32, 37, 224, 232 |
 | sharktank/sharktank/pipelines/flux/\_\_init\_\_.py                            |        2 |        0 |    100% |           |
-| sharktank/sharktank/pipelines/flux/flux\_pipeline.py                          |      137 |      109 |     20% |39-92, 120-132, 154-187, 209-227, 237, 243-245, 268-276, 294-316, 319, 338-367, 372-473, 477 |
+| sharktank/sharktank/pipelines/flux/flux\_pipeline.py                          |      138 |      109 |     21% |40-93, 121-133, 155-188, 210-228, 238, 244-246, 269-277, 295-317, 320, 339-368, 373-474, 478 |
 | sharktank/sharktank/tools/convert\_dataset.py                                 |       27 |        1 |     96% |        51 |
 | sharktank/sharktank/tools/e2e\_model\_test.py                                 |      248 |      228 |      8% |39-55, 69-498, 504-580, 594 |
 | sharktank/sharktank/tools/import\_hf\_dataset.py                              |       16 |       10 |     38% | 33-54, 60 |
@@ -136,18 +136,18 @@
 | sharktank/sharktank/types/pipelining.py                                       |       66 |        2 |     97% |  163, 183 |
 | sharktank/sharktank/types/quantizers.py                                       |      293 |       40 |     86% |131, 177-178, 181-182, 214, 253, 308-309, 318, 336, 342, 356, 362, 388, 390, 453, 455, 493-494, 551, 583, 585, 628, 651, 659, 689-690, 694, 706-716, 731, 743-750 |
 | sharktank/sharktank/types/sharding.py                                         |      155 |       40 |     74% |33, 104-106, 109-150, 262-263, 266, 320, 363-366, 369-402, 407-408, 411, 450-451, 454, 466-475 |
-| sharktank/sharktank/types/tensors.py                                          |      865 |      113 |     87% |73-78, 88-90, 161-167, 187-188, 193, 222, 230, 266, 294, 298, 339, 364, 382, 399-401, 409-411, 416, 420, 428-429, 440-442, 456-458, 472-474, 482-484, 492-493, 533, 550-552, 621, 667-669, 693, 695, 747, 780-781, 786, 823, 827, 829, 864, 869, 876, 927-928, 951-952, 957-958, 1111, 1136, 1138, 1140, 1142, 1207, 1254-1255, 1273-1275, 1280, 1404, 1417, 1419-1424, 1426, 1428, 1439, 1442, 1444, 1454, 1457, 1486, 1548-1550, 1555, 1615-1616, 1629, 1708, 1719-1720, 1728-1729, 1737-1738, 1744-1747, 1773-1774, 1901-1902, 1916, 1922, 1926-1927 |
+| sharktank/sharktank/types/tensors.py                                          |      884 |      121 |     86% |73-78, 88-90, 161-167, 187-188, 193, 222, 230, 266, 294, 298, 339, 364, 382, 399-401, 409-411, 414, 419, 422, 426, 434-435, 451-453, 467-469, 483-485, 489, 492-494, 502-504, 512-513, 553, 570-572, 641, 687-689, 713, 715, 758, 765, 773, 806-807, 812, 849, 853, 855, 890, 895, 902, 953-954, 977-978, 983-984, 1112, 1140, 1165, 1167, 1169, 1171, 1236, 1283-1284, 1302-1304, 1309, 1433, 1446, 1448-1453, 1455, 1457, 1468, 1471, 1473, 1483, 1486, 1515, 1577-1579, 1584, 1644-1645, 1658, 1737, 1748-1749, 1757-1758, 1766-1767, 1773-1776, 1802-1803, 1930-1931, 1945, 1951, 1955-1956 |
 | sharktank/sharktank/types/theta.py                                            |      377 |       57 |     85% |72, 80, 109, 140-150, 170, 182-183, 212-213, 219, 231, 234, 347-351, 414, 475-476, 480-482, 492, 500-501, 505-507, 516-517, 541, 547-548, 562-563, 580-581, 605-606, 627-628, 651, 665-667, 673, 711, 759-761, 766 |
 | sharktank/sharktank/utils/\_\_init\_\_.py                                     |        1 |        0 |    100% |           |
-| sharktank/sharktank/utils/attention.py                                        |       16 |        5 |     69% |     70-77 |
+| sharktank/sharktank/utils/attention.py                                        |       17 |        5 |     71% |     71-78 |
 | sharktank/sharktank/utils/azure.py                                            |       58 |       58 |      0% |     7-122 |
 | sharktank/sharktank/utils/cli.py                                              |      118 |       73 |     38% |35-39, 73-190, 201-206, 217-229, 240-272, 287-308, 319, 332-335, 345, 358-370, 379, 395-396, 398, 401-402, 414, 419-422, 431-449 |
 | sharktank/sharktank/utils/create\_cache.py                                    |       13 |        4 |     69% | 20, 31-33 |
 | sharktank/sharktank/utils/debugging.py                                        |       91 |       29 |     68% |46-63, 67-74, 81-83, 127, 138 |
 | sharktank/sharktank/utils/e2e\_test\_utils.py                                 |       89 |       71 |     20% |32-40, 45-49, 52-70, 75-119, 122-126, 129-133 |
-| sharktank/sharktank/utils/evaluate.py                                         |       59 |       34 |     42% |29-48, 55, 69-88, 119-120, 129-149 |
+| sharktank/sharktank/utils/evaluate.py                                         |       59 |       34 |     42% |29-50, 57, 71-90, 121-122, 131-151 |
 | sharktank/sharktank/utils/export.py                                           |       70 |        4 |     94% |140, 151, 179, 212 |
-| sharktank/sharktank/utils/export\_artifacts.py                                |      177 |      130 |     27% |38-46, 60, 67, 74, 81, 88, 123-157, 168, 181-185, 212-232, 250-262, 266-272, 284-300, 324-366, 390-427, 451-464, 490-516, 538-544 |
+| sharktank/sharktank/utils/export\_artifacts.py                                |      177 |      130 |     27% |38-46, 60, 67, 74, 81, 88, 122-156, 167, 180-184, 210-230, 248-260, 264-270, 282-298, 322-364, 388-425, 449-462, 488-514, 536-542 |
 | sharktank/sharktank/utils/functools.py                                        |       10 |        8 |     20% |     27-35 |
 | sharktank/sharktank/utils/hf.py                                               |      109 |       74 |     32% |36-47, 51-53, 65-100, 115-157, 215, 237-247, 251-252 |
 | sharktank/sharktank/utils/hf\_datasets.py                                     |       92 |       26 |     72% |40-43, 46-65, 68, 88, 103, 112-113, 118, 544-562, 566 |
@@ -156,7 +156,7 @@
 | sharktank/sharktank/utils/llm\_artifacts.py                                   |       31 |        2 |     94% |    37, 42 |
 | sharktank/sharktank/utils/llm\_scheduler.py                                   |       86 |        4 |     95% |34, 38, 42, 52 |
 | sharktank/sharktank/utils/llm\_tasks.py                                       |      139 |        3 |     98% |57, 63, 68 |
-| sharktank/sharktank/utils/llm\_utils.py                                       |      435 |       95 |     78% |100-114, 136-137, 140-143, 147-152, 203, 237-239, 588-589, 595, 604-605, 626, 629-669, 682, 685-693, 720-723, 725-726, 728, 747, 751, 786-793, 796-809, 837-843, 865 |
+| sharktank/sharktank/utils/llm\_utils.py                                       |      436 |       95 |     78% |101-115, 137-138, 141-144, 148-153, 204, 238-240, 589-590, 596, 605-606, 627, 630-670, 683, 686-694, 721-724, 726-727, 729, 748, 752, 787-794, 797-810, 838-844, 866 |
 | sharktank/sharktank/utils/load\_llm.py                                        |      173 |      136 |     21% |39-41, 45, 51-65, 70-82, 93-108, 120, 123, 138-162, 166, 173, 176-185, 190-197, 200-210, 220-238, 241-279, 282-352, 355-357 |
 | sharktank/sharktank/utils/logging.py                                          |        6 |        1 |     83% |        17 |
 | sharktank/sharktank/utils/math.py                                             |       12 |        5 |     58% | 17, 25-28 |
@@ -176,7 +176,7 @@
 | sharktank/tests/kernels/batch\_matmul\_transpose\_b\_test.py                  |       94 |        6 |     94% |127-130, 143, 170 |
 | sharktank/tests/kernels/conv\_2d\_nchw\_fchw\_test.py                         |       42 |        2 |     95% |    63, 91 |
 | sharktank/tests/kernels/einsum\_q4\_test.py                                   |       69 |        3 |     96% |94, 120, 141 |
-| sharktank/tests/kernels/gemm\_fp4\_asm\_test.py                               |       60 |       41 |     32% |26, 65-132 |
+| sharktank/tests/kernels/gemm\_fp4\_asm\_test.py                               |       57 |       38 |     33% |26, 61-120 |
 | sharktank/tests/kernels/gemm\_fp4\_test.py                                    |      112 |       40 |     64% |59, 64, 135, 138, 161-222 |
 | sharktank/tests/kernels/mlir\_kernel\_test.py                                 |       21 |        0 |    100% |           |
 | sharktank/tests/kernels/mmt\_block\_scaled\_offset\_q4\_test.py               |       46 |        3 |     93% |49, 79, 100 |
@@ -193,7 +193,7 @@
 | sharktank/tests/layers/configs\_test.py                                       |       14 |        0 |    100% |           |
 | sharktank/tests/layers/kv\_cache\_test.py                                     |       85 |        0 |    100% |           |
 | sharktank/tests/layers/linear\_test.py                                        |       92 |        1 |     99% |       219 |
-| sharktank/tests/layers/mixture\_of\_experts\_block\_test.py                   |      287 |        1 |     99% |       850 |
+| sharktank/tests/layers/mixture\_of\_experts\_block\_test.py                   |      286 |        1 |     99% |       849 |
 | sharktank/tests/layers/mmdit\_test.py                                         |       56 |        1 |     98% |        96 |
 | sharktank/tests/layers/paged\_llama\_attention\_block\_test.py                |      187 |       40 |     79% |54-71, 82-164, 464 |
 | sharktank/tests/layers/rotary\_embedding\_hf\_test.py                         |      237 |       10 |     96% |304-305, 399-406 |
@@ -204,7 +204,7 @@
 | sharktank/tests/models/flux/flux\_test.py                                     |      166 |       76 |     54% |85-87, 91-92, 117, 162-217, 226-244, 253-273, 308, 316, 323-342, 352-381, 391, 400, 410-418, 422 |
 | sharktank/tests/models/grok/test\_grok.py                                     |       25 |        0 |    100% |           |
 | sharktank/tests/models/llama4/llama4\_test.py                                 |       46 |        1 |     98% |       100 |
-| sharktank/tests/models/llama4/moe\_test.py                                    |       91 |        1 |     99% |       200 |
+| sharktank/tests/models/llama4/moe\_test.py                                    |       92 |        1 |     99% |       203 |
 | sharktank/tests/models/llama/attention\_test.py                               |       71 |        1 |     99% |       206 |
 | sharktank/tests/models/llama/benchmark\_amdgpu\_test.py                       |      110 |       69 |     37% |34, 37-49, 59-93, 96-106, 115-169, 194-209, 213-228, 232-251, 256-275, 282-352, 368-389, 393-411, 415 |
 | sharktank/tests/models/llama/quantized\_theta\_test.py                        |       20 |        0 |    100% |           |
@@ -217,7 +217,7 @@
 | sharktank/tests/models/punet/up\_down\_block\_test.py                         |       49 |        1 |     98% |       149 |
 | sharktank/tests/models/t5/t5\_test.py                                         |      269 |       59 |     78% |80-108, 146-174, 187-221, 266, 280, 289, 298, 307, 316, 325, 435-477, 522, 531, 540, 549, 558 |
 | sharktank/tests/models/vae/vae\_test.py                                       |      226 |      125 |     45% |85-120, 126-135, 140-149, 155-250, 276-290, 295-308, 386-389, 396-487, 551-585, 588-595, 604-608, 613-618, 624 |
-| sharktank/tests/ops/ops\_test.py                                              |      674 |       30 |     96% |259-262, 327-333, 340-346, 353-360, 714-719, 1159 |
+| sharktank/tests/ops/ops\_test.py                                              |      732 |       30 |     96% |267-270, 343-349, 356-362, 369-376, 754-759, 1238 |
 | sharktank/tests/ops/pipeline\_parallelized\_test.py                           |      153 |        4 |     97% |57, 181, 193, 203 |
 | sharktank/tests/ops/qconv\_test.py                                            |       97 |       12 |     88% |192-228, 232 |
 | sharktank/tests/ops/quantized\_test.py                                        |      103 |        0 |    100% |           |
@@ -230,7 +230,7 @@
 | sharktank/tests/ops/shaping/unflatten\_op\_test.py                            |       17 |        1 |     94% |        61 |
 | sharktank/tests/ops/shaping/unsqueeze\_op\_test.py                            |       17 |        1 |     94% |        64 |
 | sharktank/tests/ops/shaping/view\_op\_test.py                                 |       26 |        1 |     96% |        91 |
-| sharktank/tests/ops/sharded\_test.py                                          |     1345 |       20 |     99% |596-602, 684, 1911, 1914, 1918, 1941, 1945, 2119, 2128-2130, 2138, 2165, 2364 |
+| sharktank/tests/ops/sharded\_test.py                                          |     1383 |       20 |     99% |605-611, 693, 1967, 1970, 1974, 1997, 2001, 2175, 2184-2186, 2194, 2221, 2420 |
 | sharktank/tests/ops/test\_attention\_ops.py                                   |       28 |        1 |     96% |       106 |
 | sharktank/tests/pipelines/flux/flux\_pipeline\_test.py                        |       41 |       23 |     44% |25-27, 32-65, 77-121, 128, 135 |
 | sharktank/tests/pytest\_fixtures\_test.py                                     |       19 |        0 |    100% |           |
@@ -255,7 +255,7 @@
 | sharktank/tests/utils/patching\_test.py                                       |       81 |        0 |    100% |           |
 | sharktank/tests/utils/testing\_test.py                                        |      132 |        0 |    100% |           |
 | sharktank/tests/utils/tree\_test.py                                           |       20 |        0 |    100% |           |
-|                                                                     **TOTAL** | **24440** | **5523** | **77%** |           |
+|                                                                     **TOTAL** | **24584** | **5523** | **78%** |           |
 
 
 ## Setup coverage badge
